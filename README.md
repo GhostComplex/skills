@@ -54,6 +54,7 @@ OpenClaw picks up new skills on the next session. No gateway restart needed.
 | Skill | Description |
 |-------|-------------|
 | [superboss](./superboss/) | Engineering management for multi-agent software teams |
+| [supercrew](./supercrew/) | Software development workflow for AI coding agents |
 
 ## License
 
