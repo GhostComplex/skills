@@ -7,7 +7,7 @@ A collection of custom skills for [OpenClaw](https://openclaw.ai) agents.
 Each skill is a self-contained directory at the repo root:
 
 ```
-superboss/
+<skill-name>/
 ├── SKILL.md              # Required — YAML frontmatter + instructions
 ├── scripts/              # Optional — executable code
 ├── references/           # Optional — documentation loaded on demand
@@ -21,7 +21,7 @@ superboss/
 Copy or symlink a skill folder into `<workspace>/skills/`:
 
 ```bash
-cp -r superboss ~/.openclaw/workspace/skills/superboss
+cp -r <skill-name> ~/.openclaw/workspace/skills/<skill-name>
 ```
 
 ### Option 2: Shared (all agents)
@@ -29,7 +29,7 @@ cp -r superboss ~/.openclaw/workspace/skills/superboss
 Copy a skill folder into `~/.openclaw/skills/`:
 
 ```bash
-cp -r superboss ~/.openclaw/skills/superboss
+cp -r <skill-name> ~/.openclaw/skills/<skill-name>
 ```
 
 ### Option 3: Extra dirs (point at this repo)
@@ -50,9 +50,10 @@ OpenClaw picks up new skills on the next session. No gateway restart needed.
 
 ## Skills
 
+<!-- Update this table as skills are added -->
 | Skill | Description |
 |-------|-------------|
-| [superboss](./superboss/) | Engineering management for multi-agent software teams |
+| | |
 
 ## License
 
