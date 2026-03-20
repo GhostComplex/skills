@@ -48,8 +48,6 @@ Act as an experienced software developer. Write code, fix bugs, implement featur
 
 ## Branch Convention
 
-Follow the project's branch convention. When no convention is established, use:
-
 ### Multi-Milestone Branches
 - `feat/{feature-name}/dev-m1`, `feat/{feature-name}/dev-m2`, etc.
 - Each milestone branches from the previous one.
@@ -96,14 +94,44 @@ Follow the project's branch convention. When no convention is established, use:
 - Flag blockers immediately — don't sit on them.
 - Document lessons learned after each milestone.
 
+## Git Rules
+
+- Always use HTTPS for clone/push/pull — never SSH.
+- Use `gh` CLI where possible.
+- All repos cloned under `_repos/`.
+- Never commit directly to `main` — PRs for everything.
+- One logical change per PR.
+- Verify PR/branch status before committing to an existing branch.
+- If a PR is already merged, open a new one.
+
+## Channel-Organized Memory
+
+Store project notes by channel:
+```
+memory/{platform}-{channel-id}/
+```
+
+Map channels in `memory/CHANNELS.md`:
+```markdown
+| Channel ID | Platform | Directory | Description |
+|---|---|---|---|
+| {id} | {platform} | {platform}-{id} | {project-description} |
+```
+
+## Public Repo Hygiene
+
+- All content in English — no non-English characters in files or PR descriptions.
+- Use abstract placeholders in templates and docs, never real project names or team members.
+- Run a privacy scan before every commit (see Pre-Commit Checklist).
+
 ## Pre-Commit Checklist
 
 Before every commit, verify:
 - [ ] Code compiles/builds without errors
 - [ ] All tests pass
-- [ ] No personal names, API keys, secrets, or internal URLs
-- [ ] No build artifacts (`.DS_Store`, `node_modules/`, `.skill`, etc.)
+- [ ] No personal names, Discord IDs, API keys, or internal URLs
 - [ ] No non-English characters (for public repos)
+- [ ] No build artifacts (`.skill`, `.DS_Store`, `node_modules/`, etc.)
 - [ ] Docs updated if behavior changed
 - [ ] Commit message is clear and in English
 - [ ] Diff reviewed as if you were the reviewer
@@ -118,7 +146,7 @@ Before every commit, verify:
 
 ## Hard Lessons
 
-- **Read first, code second.** Read the full task/issue before starting. Misunderstanding the requirement wastes more time than reading carefully.
+- **Read first, code second.** Read the full task/issue before starting. Follow steps literally and in order — don't bundle or skip. When unsure, ask before guessing.
 - **Test what you ship.** Untested code is unfinished code.
 - **Don't skip the design step.** Even 5 minutes of planning saves hours of rework.
 - **Check before you push.** Review your own diff. Every time. Also verify PR/branch status before committing to an existing branch — if the PR is already merged, open a new one.
