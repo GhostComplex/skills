@@ -53,7 +53,7 @@ OpenClaw picks up new skills on the next session. No gateway restart needed.
 <!-- Update this table as skills are added -->
 | Skill | Description |
 |-------|-------------|
-| | |
+| [superboss](./superboss/) | Engineering management for multi-agent software teams |
 
 ## License
 
