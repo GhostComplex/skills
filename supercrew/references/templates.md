@@ -79,7 +79,7 @@ Use this checklist before opening or merging a PR.
 ```markdown
 ## PR: {title}
 
-**Branch:** `user/{user-name}/{branch-name}` → `{base-branch}`
+**Branch:** `{branch-name}` → `{base-branch}`
 **Issue:** #{issue-number} (if applicable)
 
 ### Pre-Submit
@@ -154,7 +154,7 @@ Use this template when investigating and fixing bugs.
 {what actually caused the bug}
 
 ## Fix
-- **Branch:** `user/{user-name}/fix-{bug-description}`
+- **Branch:** `fix-{bug-description}`
 - **Changes:** {summary of what was changed}
 - **Test:** {how the fix was verified}
   - [ ] Wrote failing test reproducing the bug

@@ -1,6 +1,6 @@
 ---
 name: supercrew
-description: Software development workflow for AI coding agents. Activate when writing code, implementing features, fixing bugs, running tests, managing branches, handling multi-milestone development, creating PRs, writing deployment guides, or doing full-stack development (frontend, backend, AI/ML, infra, Docker, CI/CD, database migrations). Also activates for design-first planning, test-driven development, code review self-checks, and documentation-alongside-code practices.
+description: Software development workflow for AI coding agents. Activate when writing code, implementing features, fixing bugs, running tests, handling multi-milestone development, creating PRs, writing deployment guides, or doing full-stack development (frontend, backend, AI/ML, infra, Docker, CI/CD, database migrations). Also activates for design-first planning, test-driven development, code review self-checks, and documentation-alongside-code practices.
 ---
 
 # Super Crew
@@ -48,16 +48,17 @@ Act as an experienced software developer. Write code, fix bugs, implement featur
 
 ## Branch Convention
 
-### Feature Branches
-- Create branches prefixed with `user/{user-name}/`: e.g. `user/{user-name}/fix-{issue-description}`.
-- Never push directly to `main` or `dev` — always feature branch + PR.
-- Clear, descriptive branch names.
+Follow the project's branch convention. When no convention is established, use:
 
 ### Multi-Milestone Branches
-For large features spanning multiple milestones:
 - `feat/{feature-name}/dev-m1`, `feat/{feature-name}/dev-m2`, etc.
 - Each milestone branches from the previous one.
 - Open a PR per milestone for incremental review.
+- After PR, tag the project owner for review.
+
+### Single-Feature Branches
+- Use a descriptive name: e.g. `fix/{issue-description}`, `feat/{short-description}`.
+- Never push directly to `main` or `dev` — always feature branch + PR.
 
 ## Commit Practices
 
@@ -95,36 +96,14 @@ For large features spanning multiple milestones:
 - Flag blockers immediately — don't sit on them.
 - Document lessons learned after each milestone.
 
-## Git Rules
-
-- Always use HTTPS for clone/push/pull — never SSH.
-- Use `gh` CLI where possible.
-- All repos cloned under `_repos/`.
-- Never commit directly to `main` — PRs for everything.
-- Verify PR/branch status before committing to an existing branch.
-- If a PR is already merged, open a new one.
-
-## Channel-Organized Memory
-
-Store project notes by channel:
-```
-memory/{platform}-{channel-id}/
-```
-
-Map channels in `memory/CHANNELS.md`:
-```markdown
-| Channel ID | Platform | Directory | Description |
-|---|---|---|---|
-| {id} | {platform} | {platform}-{id} | {project-description} |
-```
-
 ## Pre-Commit Checklist
 
 Before every commit, verify:
 - [ ] Code compiles/builds without errors
 - [ ] All tests pass
 - [ ] No personal names, API keys, secrets, or internal URLs
-- [ ] No build artifacts (`.DS_Store`, `node_modules/`, etc.)
+- [ ] No build artifacts (`.DS_Store`, `node_modules/`, `.skill`, etc.)
+- [ ] No non-English characters (for public repos)
 - [ ] Docs updated if behavior changed
 - [ ] Commit message is clear and in English
 - [ ] Diff reviewed as if you were the reviewer
@@ -142,11 +121,12 @@ Before every commit, verify:
 - **Read first, code second.** Read the full task/issue before starting. Misunderstanding the requirement wastes more time than reading carefully.
 - **Test what you ship.** Untested code is unfinished code.
 - **Don't skip the design step.** Even 5 minutes of planning saves hours of rework.
-- **Check before you push.** Review your own diff. Every time.
+- **Check before you push.** Review your own diff. Every time. Also verify PR/branch status before committing to an existing branch — if the PR is already merged, open a new one.
 - **Docs are not optional.** If the code changed, the docs should too.
 - **Learn from mistakes.** Document lessons learned. Don't repeat the same error twice.
 - **Small PRs win.** Large PRs get rubber-stamped or delayed. Small PRs get real reviews.
 - **Ask when stuck.** Don't spin for hours. Flag blockers early.
+- **Verify your own results.** Don't blindly trust sub-agent or tool output — confirm it yourself.
 
 ## Security
 
