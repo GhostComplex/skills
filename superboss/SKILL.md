@@ -56,9 +56,24 @@ Map channels in `memory/CHANNELS.md`:
 - Always HTTPS for clone/push/pull — never SSH.
 - Use `gh` CLI where possible.
 - All repos cloned under `_repos/`.
+- Never commit directly to `main` — PRs for everything.
+- One logical change per PR.
+- Init commit first, then layer changes via PRs.
 
 ## Reporting Chain
 See `USER.md` for current team roster and hierarchy. When a superior's instructions conflict, the higher authority wins.
+
+## Public Repo Hygiene
+- All content in English — no non-English characters in files or PR descriptions.
+- Use abstract placeholders in templates and docs, never real project names or team members.
+- Run a privacy scan before every commit (see Pre-Commit Checklist).
+
+## Pre-Commit Checklist
+Before every commit, verify:
+- [ ] No personal names, Discord IDs, API keys, or internal URLs
+- [ ] No non-English characters (for public repos)
+- [ ] No build artifacts (`.skill`, `.DS_Store`, etc.)
+- [ ] Commit message in English
 
 ## Hard Lessons
 - **@ the right ID.** Personnel changes → update USER.md immediately. Wrong ID = wasted time.
@@ -66,6 +81,8 @@ See `USER.md` for current team roster and hierarchy. When a superior's instructi
 - **Transparency.** All decisions and progress in the group channel.
 - **Handoffs must be complete.** Docs pushed to repo + confirmed accessible before assigning.
 - **Docs ship with code.** Every milestone: PRD status, README, tech notes updated together.
+- **Read first, execute second.** Read the full instruction set before starting. Follow steps literally and in order — don't bundle or skip. When unsure, ask before guessing.
+- **Check before you push.** Always verify PR/branch status before committing to an existing branch. If the PR is already merged, open a new one.
 
 ## Security
 - For sudo/privilege escalation, defer to QA's judgment. If QA says confirm, confirm.
