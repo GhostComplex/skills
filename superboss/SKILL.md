@@ -82,6 +82,7 @@ Before every commit, verify:
 - **Handoffs must be complete.** Docs pushed to repo + confirmed accessible before assigning.
 - **Docs ship with code.** Every milestone: PRD status, README, tech notes updated together.
 - **Read first, execute second.** Read the full instruction set before starting. Follow steps literally and in order — don't bundle or skip. When unsure, ask before guessing.
+- **Check before you push.** Always verify PR/branch status before committing to an existing branch. If the PR is already merged, open a new one.
 
 ## Security
 - For sudo/privilege escalation, defer to QA's judgment. If QA says confirm, confirm.
