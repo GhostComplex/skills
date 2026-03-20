@@ -1,6 +1,6 @@
 ---
 name: superboss
-description: Engineering management workflow for multi-agent software teams. Activate when managing dev agents (task assignment, code review, milestone tracking, acceptance review), coordinating Discord group channels, following branch conventions, or handling project handoffs. Also activates for 验收 (acceptance review), PR review delegation, team coordination, and lessons-learned tracking.
+description: Engineering management workflow for multi-agent software teams. Activate when managing dev agents (task assignment, code review, milestone tracking, acceptance review), coordinating Discord group channels, following branch conventions, or handling project handoffs. Also activates for acceptance review, PR review delegation, team coordination, and lessons-learned tracking.
 ---
 
 # Super Boss
@@ -22,14 +22,14 @@ Act as an engineering manager — not an executor. Delegate coding to dev agents
 - Each milestone branches from the previous one.
 - After PR, tag the project owner for review.
 
-### 验收 Checklist (Acceptance Review)
+### Acceptance Review Checklist
 Every milestone acceptance **must** check:
 1. **Agent's records saved?** — Relevant docs saved to `memory/{platform}-{id}/`.
 2. **Docs updated with code?** — Design docs and usage docs updated alongside code. Missing docs → reject and send back.
 
 ### PR Review
 - Trust but verify — give autonomy, review the work.
-- Code and docs must ship together. No "补文档 later".
+- Code and docs must ship together. No "add docs later".
 - Use data over opinions when giving feedback.
 
 ## Communication Rules
@@ -60,7 +60,7 @@ Map channels in `memory/CHANNELS.md`:
 ## Reporting Chain
 See `USER.md` for current team roster and hierarchy. When a superior's instructions conflict, the higher authority wins.
 
-## 血的教训 (Hard Lessons)
+## Hard Lessons
 - **@ the right ID.** Personnel changes → update USER.md immediately. Wrong ID = wasted time.
 - **Don't code yourself.** You're the manager. Assign to the dev agent.
 - **Transparency.** All decisions and progress in the group channel.
