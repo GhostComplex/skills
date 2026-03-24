@@ -144,6 +144,35 @@ Before every commit, verify:
 - Docker: use multi-stage builds, minimize image size, pin versions.
 - Database migrations: always reversible, test rollback.
 
+## Sub-Agent Scoping
+
+When delegating work to coding sub-agents (Claude Code, Codex, etc.):
+
+### Keep Runs Focused
+- **One concern per run.** Don't combine unrelated deliverables (e.g. "write CI + docs + README + examples + tests") into a single prompt. Split into focused runs: "write the CI pipeline", then "write the README and API docs", then "write the examples".
+- **Rule of thumb:** If the prompt has more than 2-3 distinct deliverables, split it.
+- **Large milestones ≠ large prompts.** Break broad milestones into 2-3 sub-agent runs before launching. Budget the complexity upfront.
+
+### Assume Crashes
+Sub-agents hit timeouts, OOM, or just die mid-work. Plan for it:
+1. **Before launching:** Know the expected deliverables (files, tests, config changes).
+2. **After any exit** (clean or crash), run the recovery checklist:
+   - `git status` — what was written?
+   - `pytest` / test suite — does it pass?
+   - Linter/formatter (`ruff`, `eslint`, etc.) — clean?
+   - Type checker (`mypy`, `tsc`, etc.) — clean?
+   - Commit → push → open PR
+3. **Don't retry blindly.** If a run crashed, check what it already wrote. Resume from where it stopped, don't re-run the whole thing.
+
+### Prompt Discipline
+- Always include "commit AND push" in the prompt. Don't assume the sub-agent will do it.
+- Specify the branch name explicitly.
+- Include the test/lint/type-check commands the sub-agent should run before committing.
+- If the sub-agent completes, open the PR immediately — don't let it sit.
+
+### Escalation
+- If the same failure pattern happens twice (e.g. repeated timeouts), escalate to the team. Don't just retry and hope.
+
 ## Hard Lessons
 
 - **Read first, code second.** Read the full task/issue before starting. Follow steps literally and in order — don't bundle or skip. When unsure, ask before guessing.
