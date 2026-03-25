@@ -148,6 +148,13 @@ Before every commit, verify:
 
 When delegating work to coding sub-agents (Claude Code, Codex, etc.):
 
+### Runtime Selection
+- **Prefer ACP runtime** over raw CLI/PTY spawns. Use `runtime: "acp"` with `sessions_spawn` — it gives better lifecycle management, crash visibility, and session resumability.
+- **Interactive/iterative work:** Use thread-bound ACP sessions (`thread: true`, `mode: "session"`) to steer mid-run and send follow-ups.
+- **Fire-and-forget tasks:** Use one-shot ACP (`mode: "run"`).
+- **Fallback:** Use CLI/PTY spawns only when ACP is unavailable or unsupported.
+- ACP sessions with `permissionMode: approve-all` handle permissions at the runtime level — no need for `--dangerously-skip-permissions` in the prompt.
+
 ### Keep Runs Focused
 - **One concern per run.** Don't combine unrelated deliverables (e.g. "write CI + docs + README + examples + tests") into a single prompt. Split into focused runs: "write the CI pipeline", then "write the README and API docs", then "write the examples".
 - **Rule of thumb:** If the prompt has more than 2-3 distinct deliverables, split it.
@@ -163,6 +170,7 @@ Sub-agents hit timeouts, OOM, or just die mid-work. Plan for it:
    - Type checker (`mypy`, `tsc`, etc.) — clean?
    - Commit → push → open PR
 3. **Don't retry blindly.** If a run crashed, check what it already wrote. Resume from where it stopped, don't re-run the whole thing.
+4. **ACP sessions can be resumed** with `resumeSessionId` instead of starting fresh — check `/acp sessions` for the last session ID before retrying from scratch.
 
 ### Prompt Discipline
 - Always include "commit AND push" in the prompt. Don't assume the sub-agent will do it.
