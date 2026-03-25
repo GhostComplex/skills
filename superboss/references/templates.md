@@ -1,3 +1,67 @@
+# Design Doc Template
+
+Use this template when writing a spec document during the DDD flow.
+
+```markdown
+# {Feature Name} — Design Spec
+
+**Date:** YYYY-MM-DD
+**Author:** {who drafted this}
+**Status:** Draft | In Review | Approved
+**Stakeholders:** {who was consulted}
+
+## Goal
+
+{One paragraph: what problem does this solve and why now?}
+
+## Success Criteria
+
+- {Measurable outcome 1}
+- {Measurable outcome 2}
+
+## Proposed Approach
+
+### Architecture
+
+{How the pieces fit together. Diagrams welcome.}
+
+### Components
+
+| Component | Responsibility | New/Modified |
+|---|---|---|
+| {name} | {what it does} | New / Modified |
+
+### Data Flow
+
+{How data moves through the system. Input → processing → output.}
+
+### Error Handling
+
+{What can go wrong and how we handle it.}
+
+### Testing Strategy
+
+{What gets tested, how, and what coverage looks like.}
+
+## Alternatives Considered
+
+### Option A: {name}
+{Description and why rejected.}
+
+### Option B: {name}
+{Description and why rejected.}
+
+## Open Questions
+
+- {Anything still unresolved}
+
+## Out of Scope (v1)
+
+- {Features explicitly deferred}
+```
+
+---
+
 # Project Tracking Template
 
 Use this template when onboarding to a new project channel.
