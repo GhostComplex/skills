@@ -131,9 +131,11 @@ Milestones are not fire-and-forget. Define intermediate checkpoints to catch dri
    ```
 
 ### Branch Convention (Multi-Milestone)
-- `feat/{feature-name}/dev-m1`, `feat/{feature-name}/dev-m2`, etc.
-- Each milestone branches from the previous one.
+- `user/{github-username}/dev-m1`, `user/{github-username}/dev-m2`, etc.
+- `dev-m1` branches from `main`.
+- Each subsequent milestone branches from the previous: `dev-m2` from `dev-m1`, `dev-m3` from `dev-m2`, etc.
 - After PR, tag the project owner for review.
+- **Example:** `user/steins-ghost/dev-m1` → `user/steins-ghost/dev-m2` → `user/steins-ghost/dev-m3`
 
 ### Acceptance Review Checklist
 Every milestone acceptance **must** check:
