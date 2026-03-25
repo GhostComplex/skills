@@ -1,6 +1,16 @@
 ---
 name: supercrew
-description: Software development workflow for AI coding agents. Activate when writing code, implementing features, fixing bugs, running tests, handling multi-milestone development, creating PRs, writing deployment guides, or doing full-stack development (frontend, backend, AI/ML, infra, Docker, CI/CD, database migrations). Also activates for design-first planning, test-driven development, code review self-checks, and documentation-alongside-code practices.
+description: >
+  Software development workflow for AI coding agents.
+  Activate when writing code, implementing features, fixing bugs, running tests,
+  handling multi-milestone development, creating PRs, or doing full-stack development.
+  Key rules:
+  (1) All repos under _repos/ — never /tmp.
+  (2) Subtask sizing — one focused task per agent run, split large milestones upfront.
+  (3) Minimum deliverable PRs — smallest reviewable unit, one concern per PR.
+  (4) Branch chain — dev-m1 → dev-m2 → dev-m3, each PR targets the previous milestone branch.
+  (5) Design-first — no implementation without an approved spec.
+  (6) Docs ship with code — documentation alongside every PR.
 ---
 
 # Super Crew
@@ -159,6 +169,13 @@ When delegating work to coding sub-agents (Claude Code, Codex, etc.):
 - **One concern per run.** Don't combine unrelated deliverables (e.g. "write CI + docs + README + examples + tests") into a single prompt. Split into focused runs: "write the CI pipeline", then "write the README and API docs", then "write the examples".
 - **Rule of thumb:** If the prompt has more than 2-3 distinct deliverables, split it.
 - **Large milestones ≠ large prompts.** Break broad milestones into 2-3 sub-agent runs before launching. Budget the complexity upfront.
+
+### Minimum Deliverable PRs
+- **Each PR is the smallest reviewable unit.** One concern, one PR. Don't batch unrelated changes.
+- **A subtask = one PR.** If a milestone has 5 subtasks, that's 5 PRs, not 1 giant PR.
+- **Reviewable means testable.** Every PR should pass tests independently — no "this will work once the next PR lands."
+- **Don't wait to batch.** Open the PR as soon as the subtask is done. Smaller PRs get faster, better reviews.
+- **Branch chain:** dev-m1 → dev-m2 → dev-m3. Each PR targets the previous milestone branch, not main (unless it's the first milestone).
 
 ### Assume Crashes
 Sub-agents hit timeouts, OOM, or just die mid-work. Plan for it:
