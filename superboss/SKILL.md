@@ -173,10 +173,27 @@ Milestones are not fire-and-forget. Define intermediate checkpoints to catch dri
 - After PR, tag the project owner for review.
 - **Example:** `user/steins-ghost/dev-m1` → `user/steins-ghost/dev-m2` → `user/steins-ghost/dev-m3`
 
+### Smoke Test Before Merge
+Unit tests with mocks can pass while the real app is broken (mocks mirror buggy code). Before merging any milestone PR, the manager **must** run at least one real execution path:
+
+- **CLI tools:** Actually invoke them (`isotope run "hello"`, not just `pytest`)
+- **Libraries:** Import and call the public API in a one-liner script
+- **APIs:** Hit them with a real request
+- **TUI:** Launch it (even piped) and verify no crash on startup
+- **Integration tests:** If the project has them, run them (`pytest tests/integration/`)
+
+**When:** Final subtask review of each milestone, after bugfixes, after major refactors.
+
+**Mock audit:** When reviewing PR test code, if tests mock a method call, verify that method actually exists on the target class. Mocking `agent.core.run` when the class only has `prompt()` is a test that tests nothing.
+
+### Design Doc — Verification Section
+Every design doc **must** include a "Verification" section specifying how to confirm the feature works beyond unit tests. Even a one-liner like "Run `isotope run 'hello'` and confirm output" catches bugs that mocks hide. The manager should include these verification steps in the final subtask assignment.
+
 ### Acceptance Review Checklist
 Every milestone acceptance **must** check:
-1. **Agent's records saved?** — Relevant docs saved to `memory/{platform}-{id}/`.
-2. **Docs updated with code?** — Design docs and usage docs updated alongside code. Missing docs → reject and send back.
+1. **Smoke test passed?** — At least one real execution path verified (not just unit tests).
+2. **Agent's records saved?** — Relevant docs saved to `memory/{platform}-{id}/`.
+3. **Docs updated with code?** — Design docs and usage docs updated alongside code. Missing docs → reject and send back.
 
 ### PR Review
 - Trust but verify — give autonomy, review the work.
@@ -229,6 +246,7 @@ Before every commit, verify:
 
 ## Hard Lessons
 - **Design before code.** No implementation without an approved spec. Help stakeholders write good specs — ask questions, propose approaches, challenge assumptions. A 30-minute brainstorming session saves days of rework.
+- **Mocks can lie.** If you mock `agent.run()` and the real method is `agent.prompt()`, all tests pass and the app is broken. Always verify mocked interfaces actually match the real API, and always run at least one real execution path before merging.
 - **@ the right ID.** Always check `memory/CHANNELS.md` Team Roster before mentioning anyone. Personnel changes → update the roster immediately. Wrong ID = wasted time.
 - **Don't code yourself.** You're the manager. Dispatch coding to dev agents. When bugs or issues arise during development, write a clear investigation task with hypotheses and assign it — don't jump in and fix it yourself. The only exception is trivial config fixes that would take longer to specify than to do.
 - **Don't duplicate your dev's work.** If a dev agent is already working on a task, do NOT spawn your own subagent or coding session to do the same thing. You will waste tokens, create conflicts, and look foolish when you realize they already handled it. Your job is to assign, unblock, and review — not to race your own team.
