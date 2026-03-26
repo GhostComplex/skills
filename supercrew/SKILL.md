@@ -146,7 +146,7 @@ Before every commit, verify:
 - [ ] No build artifacts (`.skill`, `.DS_Store`, `node_modules/`, etc.)
 - [ ] Docs updated if behavior changed
 - [ ] `TESTING.md` updated if new testable features added
-- [ ] Public symbols exported from `__init__.py`
+- [ ] Public symbols exported from package entry point
 - [ ] Commit message is clear and in English
 - [ ] Diff reviewed as if you were the reviewer
 
@@ -241,18 +241,13 @@ This section codifies lessons from real QA passes. Every feature you ship must b
 
 Every project must have a `TESTING.md` (or a Testing section in README) covering:
 
-1. **Environment setup** — exact commands to install from scratch:
-   ```
-   uv sync --package my-project
-   uv run my-project --version  # verify install
-   ```
-2. **Prerequisites** — external services, proxy URLs, env vars, API keys needed.
+1. **Environment setup** — exact commands to install and verify from scratch. Don't assume the reader has your dev environment.
+2. **Prerequisites** — external services, env vars, API keys, or config needed.
 3. **Feature inventory** — a table of every testable feature with expected behavior:
    ```
    | Feature | Command / Entry Point | Expected Behavior |
    |---|---|---|
-   | Basic run | `my-cli run "hello"` | Streams response, shows token count |
-   | RPC server | `echo '{"type":"prompt","content":"hi"}' \| my-cli rpc` | Outputs JSONL events |
+   | Example | `<your-command> <args>` | <what should happen> |
    ```
 4. **Wire protocol docs** — if the project has a protocol (RPC, WebSocket, API), document the exact format with copy-paste examples. Don't make QA reverse-engineer it.
 5. **Known limitations** — what doesn't work yet, what's intentionally unsupported.
@@ -260,7 +255,7 @@ Every project must have a `TESTING.md` (or a Testing section in README) covering
 
 ### Public API Surface
 
-- **Export everything public from `__init__.py`.** If a user imports `from my_package import MyClass` and it fails, that's a bug — even if `from my_package.internal.module import MyClass` works.
+- **Export everything public from the package entry point.** If a user imports your public API and it fails, that's a bug — even if an internal deep import works.
 - **Test your own imports.** Add a test that imports every public symbol from the package root.
 - **Type what you accept.** If a field can be `str` or `int`, type it as `str | int`. Don't rely on "callers will always send strings." Real-world clients send integers, nulls, and things you didn't expect.
 
@@ -282,7 +277,7 @@ Every project must have a `TESTING.md` (or a Testing section in README) covering
 - **Consistent exit codes.** `0` for success, non-zero for errors. Document them.
 - **Clean error messages on bad input.** Invalid flags → argparse error with usage. Missing required args → clear message. Never a Python traceback for user errors.
 - **`--json` output option.** For any CLI that produces output, offer a structured `--json` flag. Parsing human-readable output for automated testing is fragile.
-- **Env vars that are documented must work.** If README says `OPENAI_BASE_URL` configures the endpoint, it must actually be read. Don't silently ignore env vars while hardcoding defaults.
+- **Env vars that are documented must work.** If README says an env var configures something, it must actually be read. Don't silently ignore env vars while hardcoding defaults.
 
 ### Signal Handling & Lifecycle
 
@@ -294,32 +289,28 @@ Every project must have a `TESTING.md` (or a Testing section in README) covering
 
 - **Pure functions for logic, thin wrappers for I/O.** Extract business logic into pure functions that are easy to unit test. Keep I/O (network, filesystem, terminal) in thin wrapper layers.
 - **Dependency injection over hardcoded defaults.** Accept config values as parameters, not module-level constants. This lets tests override without monkeypatching.
-- **Don't trust mocks blindly.** If you mock `agent.run()` but the real method is `agent.prompt()`, all tests pass and the app is broken. Cross-reference mocks against actual interfaces.
+- **Don't trust mocks blindly.** If you mock a method but the real interface uses a different name or signature, all tests pass and the app is broken. Cross-reference mocks against actual interfaces.
 - **Integration tests for wire protocols.** Unit tests with mocked I/O are necessary but not sufficient. Add at least one integration test that sends real bytes through the protocol and checks real output.
 
 ### Pre-Ship QA Checklist
 
 Before calling any feature "done," verify from a clean environment:
 
-- [ ] Install command works from scratch (not just in your dev env)
-- [ ] `--version` returns correct version
-- [ ] All public APIs importable from package root
-- [ ] `--help` shows all options with descriptions
-- [ ] Invalid input → clean error message (no tracebacks)
-- [ ] Exit codes are consistent (0 success, non-zero error)
-- [ ] All documented env vars actually work
-- [ ] Wire protocols accept reasonable type variations (int/str/null)
-- [ ] Resume/reload restores full state
-- [ ] Ctrl+C exits cleanly, no orphan processes
+- [ ] Build/install works from scratch (not just in your dev env)
+- [ ] Public APIs accessible as documented
+- [ ] Invalid input → clean error message (no raw tracebacks or panics)
+- [ ] Documented config options and env vars actually work
+- [ ] Resume/reload restores full state (if applicable)
+- [ ] Clean shutdown on interrupt — no orphan processes
 - [ ] At least one copy-paste example in docs that QA can run verbatim
-- [ ] `TESTING.md` updated with new features
+- [ ] Testing docs updated with new features
 
 ## Smoke Test Before PR
 
 **Unit tests are necessary but not sufficient.** Before opening a PR (especially for milestones that add CLI commands, API endpoints, or runnable features), run a smoke test of the actual artifact:
 
 ### What to Smoke Test
-- **CLI commands:** Actually invoke them (e.g. `my-cli run "hello"`, `my-cli serve` with a test request). Don't just test argument parsing.
+- **CLI commands:** Actually invoke them. Don't just test argument parsing.
 - **API endpoints:** Hit them with curl or a test client. Don't just test handler logic in isolation.
 - **Libraries:** Import and call the public API from a scratch script. Don't just test internal functions.
 - **TUI/UI:** Launch it (even with piped input) and verify it doesn't crash on startup.
@@ -352,7 +343,7 @@ For the final subtask of a milestone, include smoke test instructions in the Cla
 - **Small PRs win.** Large PRs get rubber-stamped or delayed. Small PRs get real reviews.
 - **Ask when stuck.** Don't spin for hours. Flag blockers early.
 - **Verify your own results.** Don't blindly trust sub-agent or tool output — confirm it yourself.
-- **Mocks can lie.** If you mock `agent.run()` and the real method is `agent.prompt()`, all tests pass and the app is broken. Smoke test the real thing.
+- **Mocks can lie.** If you mock a method that doesn't match the real interface, all tests pass and the app is broken. Smoke test the real thing.
 - **Type what the wire sends, not what you wish it sent.** JSON has ints, strings, nulls, and missing keys. Your models must handle all of them. An integer `id` rejected by a `str`-only field is a preventable P0.
 - **Export your public API.** If it's importable in theory but not from the package root, QA and users will file bugs. Test your own imports.
 - **QA docs ≠ dev docs.** Developers know the codebase. QA doesn't. Write setup/testing docs for someone who has never seen your code. Include copy-paste commands.
