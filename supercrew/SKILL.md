@@ -49,12 +49,14 @@ Act as an experienced software developer. Write code, fix bugs, implement featur
 - Cover happy paths, edge cases, and error paths.
 - Run the full test suite before pushing.
 - If a bug is found, write a failing test first, then fix.
+- See **Writing QA-Testable Code** below for testability requirements.
 
 ### Documentation
 - Update README, API docs, and usage guides with every feature change.
 - Document architecture decisions in the appropriate location.
 - Keep deployment guides current.
 - Docs and code ship together — always.
+- Include a `TESTING.md` for QA (see below) — separate from dev docs.
 
 ## Branch Convention
 
@@ -143,6 +145,8 @@ Before every commit, verify:
 - [ ] No non-English characters (for public repos)
 - [ ] No build artifacts (`.skill`, `.DS_Store`, `node_modules/`, etc.)
 - [ ] Docs updated if behavior changed
+- [ ] `TESTING.md` updated if new testable features added
+- [ ] Public symbols exported from package entry point
 - [ ] Commit message is clear and in English
 - [ ] Diff reviewed as if you were the reviewer
 
@@ -154,16 +158,52 @@ Before every commit, verify:
 - Docker: use multi-stage builds, minimize image size, pin versions.
 - Database migrations: always reversible, test rollback.
 
-## Sub-Agent Scoping
+## Implementation: Delegating to Claude Code
 
-When delegating work to coding sub-agents (Claude Code, Codex, etc.):
+**Do NOT implement code changes directly in the main session.** Your role is orchestrator — you design, plan, review, and delegate. Actual coding (writing files, running tests, committing) is done by Claude Code via synchronous exec.
 
-### Runtime Selection
-- **Prefer ACP runtime** over raw CLI/PTY spawns. Use `runtime: "acp"` with `sessions_spawn` — it gives better lifecycle management, crash visibility, and session resumability.
-- **Interactive/iterative work:** Use thread-bound ACP sessions (`thread: true`, `mode: "session"`) to steer mid-run and send follow-ups.
-- **Fire-and-forget tasks:** Use one-shot ACP (`mode: "run"`).
-- **Fallback:** Use CLI/PTY spawns only when ACP is unavailable or unsupported.
-- ACP sessions with `permissionMode: approve-all` handle permissions at the runtime level — no need for `--dangerously-skip-permissions` in the prompt.
+### The Rule: Always Use Claude Code CLI
+
+Every coding subtask MUST be executed via `claude -p --dangerously-skip-permissions`. Run it synchronously (not background) so results come back in the same turn.
+
+```
+exec({
+  command: "claude -p --dangerously-skip-permissions 'Your focused task prompt here'",
+  workdir: "/path/to/repo",
+  timeout: 1800,
+  yieldMs: 1800000
+})
+```
+
+**How it works:**
+- `claude -p` runs in print mode — no interactive TUI, output returned directly
+- `--dangerously-skip-permissions` auto-approves all file writes and shell commands (no TTY needed)
+- `yieldMs: 1800000` (30 min) keeps the exec synchronous — without this, OpenClaw backgrounds it after 10 seconds and results won't come back in the same turn
+- Synchronous exec = results come back in the same agent turn → you report to the channel immediately
+- No background process, no missed completion events
+
+**One subtask = one exec run.** Don't batch unrelated work into one command.
+
+### Report Back After Every Run
+After each Claude Code run completes, **always post a summary in the main channel**. Don't let results sit silently. Include:
+- ✅/❌ Status (passed/failed)
+- What was done (files changed, features implemented)
+- Test results (number passing, any failures)
+- PR link (if opened)
+- What's next (next subtask or blocker)
+
+### When NOT to use Claude Code
+Only skip Claude Code and work directly when ALL of these are true:
+- The change is trivially small (a one-line fix, a typo)
+- No test run is needed
+- It would take longer to write the prompt than to make the edit
+
+If in doubt, spawn Claude Code.
+
+### Prompt Discipline
+- Always include the branch name, expected deliverables, and test/lint commands.
+- Include "commit AND push" — don't assume the agent will do it.
+- Keep prompts focused: one concern per run.
 
 ### Keep Runs Focused
 - **One concern per run.** Don't combine unrelated deliverables (e.g. "write CI + docs + README + examples + tests") into a single prompt. Split into focused runs: "write the CI pipeline", then "write the README and API docs", then "write the examples".
@@ -178,7 +218,7 @@ When delegating work to coding sub-agents (Claude Code, Codex, etc.):
 - **Branch chain:** dev-m1 → dev-m2 → dev-m3. Each PR targets the previous milestone branch, not main (unless it's the first milestone).
 
 ### Assume Crashes
-Sub-agents hit timeouts, OOM, or just die mid-work. Plan for it:
+Claude Code can hit timeouts, OOM, or die mid-work. Plan for it:
 1. **Before launching:** Know the expected deliverables (files, tests, config changes).
 2. **After any exit** (clean or crash), run the recovery checklist:
    - `git status` — what was written?
@@ -187,16 +227,110 @@ Sub-agents hit timeouts, OOM, or just die mid-work. Plan for it:
    - Type checker (`mypy`, `tsc`, etc.) — clean?
    - Commit → push → open PR
 3. **Don't retry blindly.** If a run crashed, check what it already wrote. Resume from where it stopped, don't re-run the whole thing.
-4. **ACP sessions can be resumed** with `resumeSessionId` instead of starting fresh — check `/acp sessions` for the last session ID before retrying from scratch.
-
-### Prompt Discipline
-- Always include "commit AND push" in the prompt. Don't assume the sub-agent will do it.
-- Specify the branch name explicitly.
-- Include the test/lint/type-check commands the sub-agent should run before committing.
-- If the sub-agent completes, open the PR immediately — don't let it sit.
 
 ### Escalation
 - If the same failure pattern happens twice (e.g. repeated timeouts), escalate to the team. Don't just retry and hope.
+
+## Writing QA-Testable Code
+
+**If QA can't test your code without reading the source, it's not shippable.**
+
+This section codifies lessons from real QA passes. Every feature you ship must be testable by someone who has never seen your codebase.
+
+### QA Documentation (`TESTING.md`)
+
+Every project must have a `TESTING.md` (or a Testing section in README) covering:
+
+1. **Environment setup** — exact commands to install and verify from scratch. Don't assume the reader has your dev environment.
+2. **Prerequisites** — external services, env vars, API keys, or config needed.
+3. **Feature inventory** — a table of every testable feature with expected behavior:
+   ```
+   | Feature | Command / Entry Point | Expected Behavior |
+   |---|---|---|
+   | Example | `<your-command> <args>` | <what should happen> |
+   ```
+4. **Wire protocol docs** — if the project has a protocol (RPC, WebSocket, API), document the exact format with copy-paste examples. Don't make QA reverse-engineer it.
+5. **Known limitations** — what doesn't work yet, what's intentionally unsupported.
+6. **Cleanup instructions** — how to reset state (sessions, caches, temp files) between test runs.
+
+### Public API Surface
+
+- **Export everything public from the package entry point.** If a user imports your public API and it fails, that's a bug — even if an internal deep import works.
+- **Test your own imports.** Add a test that imports every public symbol from the package root.
+- **Type what you accept.** If a field can be `str` or `int`, type it as `str | int`. Don't rely on "callers will always send strings." Real-world clients send integers, nulls, and things you didn't expect.
+
+### Defensive Input Handling
+
+- **Accept reasonable type variations.** Wire protocols receive JSON — integers, strings, nulls, missing fields. Handle all of them gracefully.
+- **Validate early, fail with clear messages.** When input is invalid, return a structured error with what was wrong and what was expected. No raw tracebacks.
+- **Test invalid inputs explicitly.** For every valid input test, write a corresponding invalid input test. If `id: "abc"` works, test `id: 42`, `id: null`, and missing `id`.
+
+### State Management & Resume
+
+- **Restore full state on resume.** If a feature supports `--session` or `--resume`, it must restore ALL state — not just messages, but also model, config, system prompt. Partial restore creates confusing behavior.
+- **Make state inspectable.** Provide a way to view current state (`--status`, `get_state` command, etc.) so QA can verify what's loaded.
+- **Document state location.** Where are sessions stored? How to list them? How to clear them?
+
+### CLI & Error Behavior
+
+- **Every CLI flag must work.** If `--help` shows a flag, it must do what it says. If `--no-tools` is listed, test it.
+- **Consistent exit codes.** `0` for success, non-zero for errors. Document them.
+- **Clean error messages on bad input.** Invalid flags → argparse error with usage. Missing required args → clear message. Never a Python traceback for user errors.
+- **`--json` output option.** For any CLI that produces output, offer a structured `--json` flag. Parsing human-readable output for automated testing is fragile.
+- **Env vars that are documented must work.** If README says an env var configures something, it must actually be read. Don't silently ignore env vars while hardcoding defaults.
+
+### Signal Handling & Lifecycle
+
+- **Ctrl+C must exit cleanly.** First press → graceful shutdown with status message. No ignored signals, no tracebacks.
+- **No orphan processes.** After exit, verify no child processes are left running. `/quit`, Ctrl+C, and EOF should all clean up.
+- **Test the actual exit.** Don't just test that the quit handler is called — verify the process actually terminates (exit code 0, no hanging threads).
+
+### Testability Patterns
+
+- **Pure functions for logic, thin wrappers for I/O.** Extract business logic into pure functions that are easy to unit test. Keep I/O (network, filesystem, terminal) in thin wrapper layers.
+- **Dependency injection over hardcoded defaults.** Accept config values as parameters, not module-level constants. This lets tests override without monkeypatching.
+- **Don't trust mocks blindly.** If you mock a method but the real interface uses a different name or signature, all tests pass and the app is broken. Cross-reference mocks against actual interfaces.
+- **Integration tests for wire protocols.** Unit tests with mocked I/O are necessary but not sufficient. Add at least one integration test that sends real bytes through the protocol and checks real output.
+
+### Pre-Ship QA Checklist
+
+Before calling any feature "done," verify from a clean environment:
+
+- [ ] Build/install works from scratch (not just in your dev env)
+- [ ] Public APIs accessible as documented
+- [ ] Invalid input → clean error message (no raw tracebacks or panics)
+- [ ] Documented config options and env vars actually work
+- [ ] Resume/reload restores full state (if applicable)
+- [ ] Clean shutdown on interrupt — no orphan processes
+- [ ] At least one copy-paste example in docs that QA can run verbatim
+- [ ] `TESTING.md` updated with new features
+
+## Smoke Test Before PR
+
+**Unit tests are necessary but not sufficient.** Before opening a PR (especially for milestones that add CLI commands, API endpoints, or runnable features), run a smoke test of the actual artifact:
+
+### What to Smoke Test
+- **CLI commands:** Actually invoke them. Don't just test argument parsing.
+- **API endpoints:** Hit them with curl or a test client. Don't just test handler logic in isolation.
+- **Libraries:** Import and call the public API from a scratch script. Don't just test internal functions.
+- **TUI/UI:** Launch it (even with piped input) and verify it doesn't crash on startup.
+
+### When to Smoke Test
+- **Final subtask of each milestone** — before opening the PR.
+- **After any bugfix** — verify the fix actually works end-to-end.
+- **After major refactors** — especially if public API surface changed.
+
+### Why This Matters
+Unit tests mock dependencies. If the mocks match the buggy code, all tests pass but the real app is broken. E2E smoke tests catch integration failures that unit tests structurally cannot.
+
+### In the Orchestrator Prompt
+For the final subtask of a milestone, include smoke test instructions in the Claude Code prompt:
+```
+# After all tests pass, smoke test:
+# 1. Run the CLI command and verify it works
+# 2. If it fails, fix the issue and re-run tests
+# 3. Only commit after both unit tests AND smoke test pass
+```
 
 ## Hard Lessons
 
@@ -209,6 +343,10 @@ Sub-agents hit timeouts, OOM, or just die mid-work. Plan for it:
 - **Small PRs win.** Large PRs get rubber-stamped or delayed. Small PRs get real reviews.
 - **Ask when stuck.** Don't spin for hours. Flag blockers early.
 - **Verify your own results.** Don't blindly trust sub-agent or tool output — confirm it yourself.
+- **Mocks can lie.** If you mock a method that doesn't match the real interface, all tests pass and the app is broken. Smoke test the real thing.
+- **Type what the wire sends, not what you wish it sent.** JSON has ints, strings, nulls, and missing keys. Your models must handle all of them. An integer `id` rejected by a `str`-only field is a preventable P0.
+- **Export your public API.** If it's importable in theory but not from the package root, QA and users will file bugs. Test your own imports.
+- **QA docs ≠ dev docs.** Developers know the codebase. QA doesn't. Write setup/testing docs for someone who has never seen your code. Include copy-paste commands.
 
 ## Security
 
