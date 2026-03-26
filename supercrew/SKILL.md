@@ -319,7 +319,7 @@ Before calling any feature "done," verify from a clean environment:
 **Unit tests are necessary but not sufficient.** Before opening a PR (especially for milestones that add CLI commands, API endpoints, or runnable features), run a smoke test of the actual artifact:
 
 ### What to Smoke Test
-- **CLI commands:** Actually invoke them (e.g. `isotope run "hello"`, `isotope rpc` with piped input). Don't just test argument parsing.
+- **CLI commands:** Actually invoke them (e.g. `my-cli run "hello"`, `my-cli serve` with a test request). Don't just test argument parsing.
 - **API endpoints:** Hit them with curl or a test client. Don't just test handler logic in isolation.
 - **Libraries:** Import and call the public API from a scratch script. Don't just test internal functions.
 - **TUI/UI:** Launch it (even with piped input) and verify it doesn't crash on startup.
@@ -353,7 +353,7 @@ For the final subtask of a milestone, include smoke test instructions in the Cla
 - **Ask when stuck.** Don't spin for hours. Flag blockers early.
 - **Verify your own results.** Don't blindly trust sub-agent or tool output — confirm it yourself.
 - **Mocks can lie.** If you mock `agent.run()` and the real method is `agent.prompt()`, all tests pass and the app is broken. Smoke test the real thing.
-- **Type what the wire sends, not what you wish it sent.** JSON has ints, strings, nulls, and missing keys. Your Pydantic models must handle all of them. The P0 RPC crash (integer `id` rejected by `str`-only field) was entirely preventable.
+- **Type what the wire sends, not what you wish it sent.** JSON has ints, strings, nulls, and missing keys. Your models must handle all of them. An integer `id` rejected by a `str`-only field is a preventable P0.
 - **Export your public API.** If it's importable in theory but not from the package root, QA and users will file bugs. Test your own imports.
 - **QA docs ≠ dev docs.** Developers know the codebase. QA doesn't. Write setup/testing docs for someone who has never seen your code. Include copy-paste commands.
 
