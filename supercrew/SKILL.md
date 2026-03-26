@@ -303,7 +303,7 @@ Before calling any feature "done," verify from a clean environment:
 - [ ] Resume/reload restores full state (if applicable)
 - [ ] Clean shutdown on interrupt — no orphan processes
 - [ ] At least one copy-paste example in docs that QA can run verbatim
-- [ ] Testing docs updated with new features
+- [ ] `TESTING.md` updated with new features
 
 ## Smoke Test Before PR
 
