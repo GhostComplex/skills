@@ -1,0 +1,4 @@
+# QA reports are local — don't check in actual test results.
+# Use references/qa-report-template.md to create new reports.
+*
+!.gitignore
