@@ -291,6 +291,7 @@ Every project must have a `TESTING.md` (or a Testing section in README) covering
 - **Dependency injection over hardcoded defaults.** Accept config values as parameters, not module-level constants. This lets tests override without monkeypatching.
 - **Don't trust mocks blindly.** If you mock a method but the real interface uses a different name or signature, all tests pass and the app is broken. Cross-reference mocks against actual interfaces.
 - **Integration tests for wire protocols.** Unit tests with mocked I/O are necessary but not sufficient. Add at least one integration test that sends real bytes through the protocol and checks real output.
+- **Use real response fixtures, not hand-crafted mocks.** Record actual API/tool responses and replay them in tests. Hand-crafted mocks match your assumptions, not reality.
 
 ### Pre-Ship QA Checklist
 
@@ -343,8 +344,8 @@ For the final subtask of a milestone, include smoke test instructions in the Cla
 - **Small PRs win.** Large PRs get rubber-stamped or delayed. Small PRs get real reviews.
 - **Ask when stuck.** Don't spin for hours. Flag blockers early.
 - **Verify your own results.** Don't blindly trust sub-agent or tool output — confirm it yourself.
-- **Mocks can lie.** If you mock a method that doesn't match the real interface, all tests pass and the app is broken. Smoke test the real thing.
-- **Type what the wire sends, not what you wish it sent.** JSON has ints, strings, nulls, and missing keys. Your models must handle all of them. An integer `id` rejected by a `str`-only field is a preventable P0.
+- **Mocks can lie.** If you mock a method that doesn't match the real interface, all tests pass and the app is broken. Smoke test the real thing. Use real response fixtures where possible.
+- **Type what the wire sends, not what you wish it sent.** JSON has ints, strings, nulls, and missing keys. Your models must handle all of them gracefully.
 - **Export your public API.** If it's importable in theory but not from the package root, QA and users will file bugs. Test your own imports.
 - **QA docs ≠ dev docs.** Developers know the codebase. QA doesn't. Write setup/testing docs for someone who has never seen your code. Include copy-paste commands.
 
