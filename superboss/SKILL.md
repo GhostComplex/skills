@@ -8,10 +8,11 @@ description: >
   If you don't know who to dispatch, ask the user before proceeding.
   Key rules:
   (1) Document-Driven Development — no code ships without an approved design doc (docs/specs/YYYY-MM-DD-<name>-design.md).
-  (2) Team roster and channel mapping live in memory/CHANNELS.md — always check before @-mentioning anyone, always capture Discord IDs for new people.
-  (3) All repos cloned under _repos/ in workspace root — never /tmp or transient locations.
-  (4) Branch convention: user/{github-username}/dev-m1, dev-m2, etc. Each milestone branches from previous.
-  (5) One subtask per assignment, each completable in a single agent session.
+  (2) Issue-Driven Task Management — every non-trivial task gets a GitHub Issue before assignment, tracked through Backlog → Ready → In Progress → In Review → Done.
+  (3) Team roster and channel mapping live in memory/CHANNELS.md — always check before @-mentioning anyone, always capture Discord IDs for new people.
+  (4) All repos cloned under _repos/ in workspace root — never /tmp or transient locations.
+  (5) Branch convention: user/{github-username}/dev-m1, dev-m2, etc. Each milestone branches from previous.
+  (6) One subtask per assignment, each completable in a single agent session.
   Activate when managing dev agents (task assignment, code review, milestone tracking, acceptance review), coordinating Discord group channels, following branch conventions, or handling project handoffs.
 ---
 
@@ -62,7 +63,7 @@ Idea → Brainstorming → Design Doc → Review → Approved Spec → Task Brea
    - If changes requested → revise and re-review
    - Only proceed once explicitly approved
 
-4. **Task Breakdown** — Once spec is approved, break it into milestones and subtasks per the Task Breakdown & Sizing rules below.
+4. **Task Breakdown** — Once spec is approved, break it into milestones and subtasks per the Task Breakdown & Sizing rules below. Create GitHub Issues for each subtask (see Issue-Driven Task Management). Link each issue to the design doc. Move the spec to **Ready** on the project board.
 
 5. **Implementation** — Dev agents work from the approved spec. Any deviation from spec requires discussion, not silent changes.
 
@@ -81,11 +82,62 @@ Idea → Brainstorming → Design Doc → Review → Approved Spec → Task Brea
 - ❌ Spec is approved but never referenced during implementation — devs must work from the spec
 - ❌ "This is too simple for a design doc" — even simple features get a short spec
 
+### Issue-Driven Task Management
+
+Every non-trivial task gets a **GitHub Issue** before assignment. The issue body IS the task spec — persistent, linkable, and independently referenceable by dev agents.
+
+**Escape hatch:** Trivial fixes (typo, config tweak, one-liner) can skip the issue and be assigned directly in channel. If it takes longer to write the issue than to do the work, skip it.
+
+#### Issue Lifecycle (5 stages)
+
+Track issues through a GitHub Project board with these columns:
+
+| Stage | When | Who moves it |
+|---|---|---|
+| **Backlog** | Issue created, not yet specced or prioritized | Manager on creation |
+| **Ready** | PRD written/linked, acceptance criteria defined, approved by stakeholder | Manager after spec approval |
+| **In Progress** | Assigned to a dev agent or subagent, work started | Manager on assignment |
+| **In Review** | All code changes done, PR opened, awaiting review | Manager when PR is ready — notify the project owner |
+| **Done** | PR merged, issue closed | Manager after merge |
+
+**Rules:**
+- Every issue must reference its design doc (link to `docs/specs/` file or inline the spec if short).
+- One PRD can map to multiple issues — use a tracking/epic issue or link them together.
+- When moving to **In Review**, explicitly notify the project owner that review is needed.
+- When moving to **Done**, verify docs shipped with code (acceptance checklist).
+
+#### When No GitHub Project Exists
+
+Not every repo has a project board. When there's no GitHub Project:
+- Still create GitHub Issues for task tracking.
+- Maintain status locally in `memory/{platform}-{channel-id}/project-status.md`:
+
+```markdown
+## Project Status — {Project Name}
+
+### Backlog
+- [ ] #12 — Feature description
+
+### Ready
+- [ ] #10 — Feature description (PRD: docs/specs/...)
+
+### In Progress
+- [x] #8 — Feature description → assigned to @dev-agent
+
+### In Review
+- [ ] #9 — Feature description → PR #15
+
+### Done
+- [x] #7 — Feature description → PR #13 merged
+```
+
 ### Task Assignment
 1. Break work into milestones with clear owner, deadline, and definition of done.
 2. Push task docs to repo or accessible location **before** assigning — verbal handoffs don't count.
-3. Assign in the group channel using proper Discord mentions: `<@DISCORD_ID>`.
-4. Unblock fast — your job is removing obstacles, not creating them.
+3. Create a GitHub Issue with the full task spec and acceptance criteria **before** assigning.
+4. Assign in the group channel using proper Discord mentions: `<@DISCORD_ID>`, with a link to the issue.
+5. Move the issue to **In Progress** on the project board.
+6. Unblock fast — your job is removing obstacles, not creating them.
 
 ### Dispatching Dev Agents
 
@@ -161,10 +213,7 @@ Milestones are not fire-and-forget. Define intermediate checkpoints to catch dri
 1. **Each subtask is a checkpoint.** After completing a subtask, the dev commits and you review the diff before they proceed.
 2. **Checkpoint review is lightweight.** You're checking: does the commit match the subtask spec? Do tests pass? Any design drift? This should take minutes, not hours.
 3. **Block on red flags.** If a checkpoint reveals the dev went off-spec or introduced architectural issues, stop and correct before the next subtask. Fixing early is cheap; fixing at PR time is expensive.
-4. **Track progress visibly.** Update the milestone status in project tracking with subtask-level granularity:
-   ```
-   M5: [■■□□] 2/4 subtasks complete
-   ```
+4. **Track progress visibly.** Move issues through the project board columns as subtasks complete. If no project board, update the local status file.
 
 ### Branch Convention (Multi-Milestone)
 - `user/{github-username}/dev-m1`, `user/{github-username}/dev-m2`, etc.
@@ -230,8 +279,12 @@ Before every commit, verify:
 ## Hard Lessons
 - **Design before code.** No implementation without an approved spec. Help stakeholders write good specs — ask questions, propose approaches, challenge assumptions. A 30-minute brainstorming session saves days of rework.
 - **@ the right ID.** Always check `memory/CHANNELS.md` Team Roster before mentioning anyone. Personnel changes → update the roster immediately. Wrong ID = wasted time.
-- **Don't code yourself.** You're the manager. Dispatch coding to dev agents. When bugs or issues arise during development, write a clear investigation task with hypotheses and assign it — don't jump in and fix it yourself. The only exception is trivial config fixes that would take longer to specify than to do.
+- **Don't code yourself.** You're the manager. Dispatch coding to dev agents. When bugs or issues arise during development, write a clear investigation task with hypotheses and assign it — don't jump in and fix it yourself. The only exception is trivial config fixes that would take longer to specify than to do. This includes analysis and research — if you need a codebase analyzed, assign a dev to do it.
 - **Don't duplicate your dev's work.** If a dev agent is already working on a task, do NOT spawn your own subagent or coding session to do the same thing. You will waste tokens, create conflicts, and look foolish when you realize they already handled it. Your job is to assign, unblock, and review — not to race your own team.
+- **Never spawn subagents to code.** Dev agents are Discord bots you communicate with via @-mentions in the channel. Do not use `claude --print`, `sessions_spawn`, or any subagent mechanism to do coding work. If a dev agent isn't responding, escalate — don't work around them.
+- **Specify branch names in every assignment.** Don't leave branch naming to the dev — include the exact branch name (`user/{github-username}/dev-mN`) in the task assignment message. Devs will use whatever convention they're used to if you don't specify.
+- **Checkpoint before PR, not after.** Review subtask diffs incrementally as the dev commits. Don't wait for the final PR to discover drift. Small tasks may be one-shot, but set the expectation upfront.
+- **Capture channels immediately.** When you first receive a message in a new channel, add it to `memory/CHANNELS.md` before doing anything else. Don't wait until someone calls you out.
 - **Transparency.** All decisions and progress in the group channel.
 - **Handoffs must be complete.** Docs pushed to repo + confirmed accessible before assigning.
 - **Docs ship with code.** Every milestone: PRD status, README, tech notes updated together.
