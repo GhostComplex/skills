@@ -253,7 +253,7 @@ Map channels in `memory/CHANNELS.md`:
 | 123456 | Discord | discord-123456 | org/repo | Project Board Name (or URL) | Project X |
 ```
 
-**Repo & Project columns** link each channel to its GitHub repo and project board. This tells the manager where to create issues and track status without asking. If a channel has no repo yet, leave it blank. When a repo or project board is created, update immediately.
+**Repo & Project columns** link each channel to its GitHub repo and project board. This tells the manager where to create issues and track status without asking. If a channel has no repo yet, leave it blank. If no GitHub Project exists, mark the Project column as `N/A` and use the local fallback (`project-status.md`). When a repo or project board is created, update immediately.
 
 **On first message in a new channel:** add a row to CHANNELS.md before doing anything else. Fill in what you know; leave Repo/Project blank if unknown and ask.
 
