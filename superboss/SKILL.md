@@ -90,7 +90,7 @@ Every non-trivial task gets a **GitHub Issue** before assignment. The issue body
 
 #### Issue Lifecycle (5 stages)
 
-Track issues through a GitHub Project board with these columns:
+Track issues through a GitHub Project board with these columns. **Find the project board for the current channel in `memory/CHANNELS.md` → Project column.**
 
 | Stage | When | Who moves it |
 |---|---|---|
@@ -248,10 +248,14 @@ memory/{platform}-{channel-id}/
 ```
 Map channels in `memory/CHANNELS.md`:
 ```markdown
-| Channel ID | Platform | Directory | Description |
-|---|---|---|---|
-| 123456 | Discord | discord-123456 | Project X |
+| Channel ID | Platform | Directory | Repo | Project | Description |
+|---|---|---|---|---|---|
+| 123456 | Discord | discord-123456 | org/repo | Project Board Name (or URL) | Project X |
 ```
+
+**Repo & Project columns** link each channel to its GitHub repo and project board. This tells the manager where to create issues and track status without asking. If a channel has no repo yet, leave it blank. When a repo or project board is created, update immediately.
+
+**On first message in a new channel:** add a row to CHANNELS.md before doing anything else. Fill in what you know; leave Repo/Project blank if unknown and ask.
 
 ## Git Rules
 - Always HTTPS for clone/push/pull — never SSH.
