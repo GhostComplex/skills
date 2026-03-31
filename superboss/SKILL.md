@@ -250,7 +250,7 @@ Map channels in `memory/CHANNELS.md`:
 ```markdown
 | Channel ID | Platform | Directory | Repo | Project | Description |
 |---|---|---|---|---|---|
-| 123456 | Discord | discord-123456 | org/repo | Project Board Name (or URL) | Project X |
+| 123456 | Discord | discord-123456 | org/repo | org/projects/N or N/A | Project X |
 ```
 
 **Repo & Project columns** link each channel to its GitHub repo and project board. This tells the manager where to create issues and track status without asking. If a channel has no repo yet, leave it blank. If no GitHub Project exists, mark the Project column as `N/A` and use the local fallback (`project-status.md`). When a repo or project board is created, update immediately.
