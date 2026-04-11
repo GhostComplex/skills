@@ -28,6 +28,15 @@ Step 2: ALWAYS reply with a status report. Do NOT reply NO_REPLY.
 - If blocked: who needs to act and on what (use <@DISCORD_ID> mention format)
 - If idle: brief summary of recent progress
 
+Step 3: Check if this channel has an associated GitHub Project (see memory/CHANNELS.md "GitHub Project" column).
+If it does, run: gh project item-list <PROJECT_NUMBER> --owner <OWNER> --format json
+Filter for items in the "Ready" status column. If any Ready items exist:
+- List them in your report
+- For each Ready item, try to dispatch it: assign to the appropriate dev agent via @-mention in the channel, move to In Progress, and update the design doc if needed
+- If no dev agent is available or you're unsure who should do it, flag it in the report and ask
+- Goal: keep the Ready column empty by dispatching work promptly
+If no GitHub Project is associated, skip this step.
+
 Be concise and actionable.
 ```
 

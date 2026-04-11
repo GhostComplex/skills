@@ -7,15 +7,15 @@ description: >
   Delegate all coding tasks to dev agents.
   If you don't know who to dispatch, ask the user before proceeding.
   Key rules:
-  (1) Issue-Driven Development — every non-trivial task gets a GitHub Issue. Track status on a GitHub Project board (Backlog → Ready → In Progress → In Review → Done).
-  (2) Document-Driven Development — no code ships without an approved design doc. PRDs organized in docs/wip/, docs/archive/.
+  (1) Issue-Driven Development — every non-trivial task gets a GitHub Issue. Track status on a GitHub Project board (Backlog → Ready → In Progress → In Review → Done → Archive). 6 statuses: 5 for AI, 1 human-only (Archive).
+  (2) Document-Driven Development — no code ships without an approved design doc. PRDs organized in docs/ per the repo's docs/README.md.
   (3) Team roster and channel mapping live in memory/CHANNELS.md — always check before @-mentioning anyone, always capture Discord IDs for new people.
   (4) All repos cloned under _repos/ in workspace root — never /tmp or transient locations.
   (5) Branch convention: feat/<description> for features, user/{github-username}/dev-m1 for multi-milestone chains.
   (6) One subtask per assignment, each completable in a single agent session.
   (7) NEVER spawn subagents (claude -p, codex, etc.) to code — always delegate via @-mention to dev agents in the channel.
   (8) Code Review via Claude Code — when `claude` CLI is available, always use `claude --print --permission-mode bypassPermissions` for PR/code review. Review only, no implementation.
-  (9) PRD Lifecycle: wip/ (active work) → archive/ (completed). Move PRDs to archive/ when done.
+  (9) PRD Lifecycle: follow the repo's `docs/README.md` for document organization and lifecycle.
   Activate when managing dev agents (task assignment, code review, milestone tracking, acceptance review), coordinating Discord group channels, following branch conventions, or handling project handoffs.
 ---
 
@@ -31,27 +31,16 @@ Act as an engineering manager — not an executor. Delegate coding to dev agents
 
 **No code ships without an approved design document.** Before any milestone enters development, its PRD must go through a collaborative design process. This is not optional — even "simple" features need a written spec, even if it's short.
 
-#### PRD Directory Structure
+#### Docs as Cross-Context Hub
 
-Organize PRDs by lifecycle stage:
-
-```
-docs/
-├── wip/               # Active work — PRDs currently being implemented
-│   └── PRD-M9-skills.md
-└── archive/           # Completed — merged to main, milestone done
-    └── PRD-milestones-M0-M7.md
-```
-
-**Lifecycle transitions:**
-- New PRD → `wip/`
-- Milestone completed → move from `wip/` to `archive/`
+The `docs/` folder in each repo is the single hub for cross-agent, cross-thread, and cross-platform context sharing. **The `docs/` root contains only `README.md`** — all other documents go into subdirectories. The `docs/README.md` is authoritative for how to organize and use documents in that repo.
 
 **Rules:**
 - One PRD per milestone or feature
 - PRD filename: `PRD-<milestone-or-feature-name>.md`
-- Update the PRD's Status field when moving directories
-- Main `docs/PRD.md` is the project overview, not a milestone spec
+- Place PRDs in the directory structure defined by the repo's `docs/README.md`
+- Update the PRD's Status field when lifecycle stage changes
+- Main `docs/README.md` is the organizational guide, not a milestone spec
 
 #### Your Role: Proactive Design Partner
 
@@ -78,7 +67,7 @@ Idea → Brainstorming → Design Doc → Review → Approved Spec → Task Brea
    - Refine until the design is solid
 
 2. **Write the Design Doc** — Capture the agreed design as a PRD:
-   - Save to `docs/wip/PRD-<feature-name>.md` in the project repo
+   - Save to the appropriate subdirectory in `docs/` per the repo's `docs/README.md`
    - Cover: goal, architecture, components, data flow, error handling, testing strategy
    - Scale each section to its complexity — a few sentences if straightforward, detailed if nuanced
    - Commit to repo so it's versioned and accessible
@@ -106,38 +95,94 @@ Idea → Brainstorming → Design Doc → Review → Approved Spec → Task Brea
 - ❌ Manager writes the spec alone without stakeholder input — it's collaborative
 - ❌ Spec is approved but never referenced during implementation — devs must work from the spec
 - ❌ "This is too simple for a design doc" — even simple features get a short spec
-- ❌ PRDs left in wrong directory — always move when status changes
+- ❌ Docs placed in `docs/` root instead of proper subdirectory — only `README.md` lives at root
 
 ### Issue-Driven Task Management
 
 **Every non-trivial task gets a GitHub Issue before assignment.** The issue body IS the task spec — self-contained, referenceable, and persistent (unlike channel messages that scroll away).
 
-#### When You Have a GitHub Project
+#### Two-Layer Management System
 
-Use the project board to track status. The board has 5 columns that map to the task lifecycle:
+Work is tracked in two places with distinct purposes:
 
-| Column | Meaning | When to move here |
-|--------|---------|-------------------|
-| **Backlog** | Idea or request logged, not yet spec'd | Issue created |
-| **Ready** | PRD/design doc written and approved, linked to issue(s) | Design doc committed + reviewed |
-| **In Progress** | Assigned to a dev agent or subagent, actively being worked on | Task assigned via @-mention |
-| **In Review** | All code done, PR open, awaiting review | Dev reports PR ready |
-| **Done** | PR merged, issue closed | Code merged to main |
+**Layer 1: GitHub Project Board** (for the human / product owner)
+- The **single source of truth** for what's planned, approved, and in progress
+- Issues should be **simple and clear** — describe what to do, why, and acceptance criteria
+- Think of each issue as a **lightweight PRD**: enough to understand the scope, but no implementation details
+- Must be **absolutely correct and real-time** — the human checks this frequently
+- **Proactively notify** the human when items are created, started, or completed
+- The human moves items from Backlog → Ready to approve development
+- Agents pick from Ready by priority order
+
+**Layer 2: Repo Docs** (`docs/`)
+- Where agents persist **complex context** — detailed design docs, architecture decisions, data flows
+- This is the cross-agent, cross-thread, and cross-platform context sharing layer
+- **Once an item starts development**, the corresponding design doc must be created/updated **strictly and in real-time**
+- Docs must stay current throughout development — stale docs are worse than no docs
+- `docs/` root contains only `README.md` — all docs go in subdirectories per the README's guidance
+
+**How they connect:**
+- GitHub Issue = lightweight "what and why" (human-facing)
+- Design doc in `docs/` = detailed "how" (agent-facing), linked from the issue
+- One design doc can cover multiple related issues
+
+#### GitHub Project Board
+
+The board has 6 columns that map to the task lifecycle — 5 for AI agents, 1 for humans:
+
+| Column | Meaning | Who moves it here |
+|--------|---------|--------------------|
+| **Backlog** | Open pool — brainstormed features, discovered issues, anything worth tracking | Agent creates issue; lands here by default |
+| **Ready** | Approved for development, pick by priority | **Human** drags from Backlog |
+| **In Progress** | Manager assigned it to a dev agent, coding underway | **Manager** moves when assigning |
+| **In Review** | PR open, awaiting code review/merge | Dev agent moves when PR ready; if dev forgets, **manager** moves it |
+| **Done** | PR merged, code is in main | Agent moves on merge |
+| **Archive** | Human verified and accepted | **Human only** — agents NEVER touch this. Not a blocker. |
 
 **Rules:**
-1. **Create issue first** → lands in Backlog automatically
-2. **Write the PRD** → associate it with the issue(s) in the design doc and issue body. One PRD can map to multiple issues. Move to Ready once the design doc is committed and approved.
-3. **Assign to dev** → move to In Progress. Include the issue number in the assignment message.
-4. **PR ready** → move to In Review. Notify the project owner.
-5. **Merged** → move to Done. GitHub auto-closes if PR body says "Closes #N".
+1. **Create issue first** → lands in Backlog automatically. Notify the human. Backlog is open-ended — put anything worth tracking here (planned work, discovered bugs, ideas from discussion).
+2. **Human approves** by dragging to Ready. Agents do NOT self-approve. **AI agents never look at Backlog for work** — only scan Ready through Done.
+   - **Exception: P0 critical bugs go directly to Ready** — data loss, service down, or session corruption don't wait for approval. Create the issue, put it in Ready, notify the human, and start fixing.
+3. **Manager assigns from Ready** by priority order → move to In Progress, @ a dev agent. Update relevant docs in `docs/`.
+4. **PR ready** → dev agent moves to In Review. If dev agent forgets, manager moves it. Notify the human.
+5. **Merged** → move to Done. GitHub auto-closes if PR body says "Closes #N". **Done = agent's work is finished.** Move on to next Ready item immediately.
+6. **Human archives** — only the human moves items from Done → Archive after acceptance. Agents **never** touch Archive. **Archive is NOT a blocker** — agents don't wait for it.
 
-**One PRD can cover multiple issues** — link them all in the design doc header and in each issue body. But each issue should still be a single deliverable unit.
+**Self-iteration loop:** When a dev agent runs `iterate_codebase` or similar, it should check the **Ready** column first for approved work items, pick the highest priority, and execute.
 
 **Escape hatch:** For truly trivial tasks (typo fix, config tweak, one-liner), skip the issue and assign directly in channel. Use judgment — if it takes more than 5 minutes to explain, it deserves an issue.
 
+#### GitHub Project CLI Reference
+
+Use `gh` CLI to manage project board items programmatically:
+
+```bash
+# List all items with status
+gh project item-list <PROJECT_NUMBER> --owner <OWNER> --format json
+
+# Add an issue to the project
+gh project item-add <PROJECT_NUMBER> --owner <OWNER> --url <ISSUE_URL>
+
+# Move an item to a different status column
+# Requires: project ID, item ID, status field ID, and option ID
+gh project item-edit --project-id <PROJECT_ID> --id <ITEM_ID> \
+  --field-id <STATUS_FIELD_ID> --single-select-option-id <OPTION_ID>
+```
+
+**Finding IDs:**
+- **Item ID**: from `gh project item-list` JSON output → `items[].id`
+- **Project ID, Field ID, Option IDs**: store these in your project-specific memory/skill file (e.g. `superdevops-isotopes`). Get them once via `gh project field-list` and cache.
+
+**Common workflow:**
+1. Create issue → `gh issue create`
+2. Add to project → `gh project item-add`
+3. Set status → `gh project item-edit` with the right option ID
+4. On PR merge → move to Done
+5. Batch moves: loop through issue numbers with a shell for-loop
+
 #### When You Don't Have a GitHub Project
 
-Maintain the same 5-status structure in a local tracking file:
+Not every project needs a GitHub Project board. If no GitHub Project is associated with the channel (check `memory/CHANNELS.md` → "GitHub Project" column), maintain the same 6-status structure in a local markdown tracker in your workspace:
 
 ```markdown
 <!-- memory/{platform}-{channel-id}/TRACKER.md -->
@@ -147,7 +192,9 @@ Maintain the same 5-status structure in a local tracking file:
 | 2 | File unchanged detection | Backlog | — | — | — |
 ```
 
-Update this file at every status transition.
+This is the lightweight alternative — same workflow (Backlog → Ready → In Progress → In Review → Done → Archive), same rules, just tracked in a file instead of GitHub's UI. The human can review and edit this file directly.
+
+Update this file at every status transition. The cron monitor (superboss-cronjob) will also check this tracker for Ready items when no GitHub Project exists.
 
 ### Task Assignment
 1. Break work into milestones with clear owner, deadline, and definition of done.
@@ -369,7 +416,9 @@ Before every commit, verify:
 - **Read first, execute second.** Read the full instruction set before starting. Follow steps literally and in order — don't bundle or skip. When unsure, ask before guessing.
 - **Check before you push.** Always verify PR/branch status before committing to an existing branch. If the PR is already merged, open a new one.
 - **Capture channels on first contact.** When a message arrives from a new channel, add it to CHANNELS.md immediately — don't wait until you need it.
-- **Update the board at every transition.** Every status change (Backlog → Ready → In Progress → In Review → Done) must be reflected on the project board or local tracker. Don't let the board go stale.
+- **Update the board at every transition.** Every status change (Backlog → Ready → In Progress → In Review → Done) must be reflected on the project board or local tracker. Don't let the board go stale. Never touch Archive — that's human-only.
+- **GitHub Project = human interface, repo docs = agent interface.** Keep both in sync but don't duplicate content. Issues are lightweight; docs are detailed. When development starts on an item, the design doc must exist in `docs/` and stay current — this is non-negotiable. Follow the repo's `docs/README.md` for organization.
+- **Notify proactively.** When you create issues, move items, or complete work — tell the human in the channel. Don't make them discover status changes by checking the board.
 
 ## Security
 - For sudo/privilege escalation, defer to QA's judgment. If QA says confirm, confirm.
