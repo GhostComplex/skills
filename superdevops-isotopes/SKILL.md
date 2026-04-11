@@ -56,15 +56,17 @@ Common failure modes:
 
 ## CLI Commands
 
+**Always use debug mode** — set `LOG_LEVEL=debug` for all daemon starts to get full debug payload logging.
+
 ```bash
 cd ~/_basement/isotopes
 
-# Daemon control
-node dist/cli.js start          # Start as background daemon
-node dist/cli.js stop           # Stop daemon
-node dist/cli.js restart        # Restart daemon
-node dist/cli.js status         # Show daemon status
-node dist/cli.js reload [agentId]  # Hot-reload workspace (no restart needed)
+# Daemon control (always with debug)
+LOG_LEVEL=debug node dist/cli.js start    # Start as background daemon
+node dist/cli.js stop                      # Stop daemon
+LOG_LEVEL=debug node dist/cli.js restart   # Restart daemon
+node dist/cli.js status                    # Show daemon status
+node dist/cli.js reload [agentId]          # Hot-reload workspace (no restart needed)
 
 # Foreground run (debug)
 LOG_LEVEL=debug node dist/cli.js
@@ -85,7 +87,9 @@ When Isotopes is stuck on complex features:
 - Read the relevant code in `~/_basement/isotopes/src/`
 - Consult reference repos (all in `~/_basement/`):
   - `openclaw` — OpenClaw agent framework (similar architecture)
+  - `pi-mono` — Underlying agent SDK (pi-agent-core, pi-coding-agent, pi-ai, pi-tui)
   - `hermes-agent` — Alternative agent implementation
+  - `nanobot` — Lightweight Python agent reference
 - Ensure tests pass: `pnpm test`
 
 ## Code Review / QA

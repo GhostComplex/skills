@@ -8,14 +8,14 @@ description: >
   If you don't know who to dispatch, ask the user before proceeding.
   Key rules:
   (1) Issue-Driven Development — every non-trivial task gets a GitHub Issue. Track status on a GitHub Project board (Backlog → Ready → In Progress → In Review → Done).
-  (2) Document-Driven Development — no code ships without an approved design doc. PRDs organized in docs/ongoing/, docs/archived/.
+  (2) Document-Driven Development — no code ships without an approved design doc. PRDs organized in docs/wip/, docs/archive/.
   (3) Team roster and channel mapping live in memory/CHANNELS.md — always check before @-mentioning anyone, always capture Discord IDs for new people.
   (4) All repos cloned under _repos/ in workspace root — never /tmp or transient locations.
   (5) Branch convention: feat/<description> for features, user/{github-username}/dev-m1 for multi-milestone chains.
   (6) One subtask per assignment, each completable in a single agent session.
   (7) NEVER spawn subagents (claude -p, codex, etc.) to code — always delegate via @-mention to dev agents in the channel.
   (8) Code Review via Claude Code — when `claude` CLI is available, always use `claude --print --permission-mode bypassPermissions` for PR/code review. Review only, no implementation.
-  (9) PRD Lifecycle: ongoing/ (active work) → archived/ (completed). Move PRDs to archived/ when done.
+  (9) PRD Lifecycle: wip/ (active work) → archive/ (completed). Move PRDs to archive/ when done.
   Activate when managing dev agents (task assignment, code review, milestone tracking, acceptance review), coordinating Discord group channels, following branch conventions, or handling project handoffs.
 ---
 
@@ -37,15 +37,15 @@ Organize PRDs by lifecycle stage:
 
 ```
 docs/
-├── ongoing/           # Active work — PRDs currently being implemented
+├── wip/               # Active work — PRDs currently being implemented
 │   └── PRD-M9-skills.md
-└── archived/          # Completed — merged to main, milestone done
+└── archive/           # Completed — merged to main, milestone done
     └── PRD-milestones-M0-M7.md
 ```
 
 **Lifecycle transitions:**
-- New PRD → `ongoing/`
-- Milestone completed → move from `ongoing/` to `archived/`
+- New PRD → `wip/`
+- Milestone completed → move from `wip/` to `archive/`
 
 **Rules:**
 - One PRD per milestone or feature
@@ -78,7 +78,7 @@ Idea → Brainstorming → Design Doc → Review → Approved Spec → Task Brea
    - Refine until the design is solid
 
 2. **Write the Design Doc** — Capture the agreed design as a PRD:
-   - Save to `docs/ongoing/PRD-<feature-name>.md` in the project repo
+   - Save to `docs/wip/PRD-<feature-name>.md` in the project repo
    - Cover: goal, architecture, components, data flow, error handling, testing strategy
    - Scale each section to its complexity — a few sentences if straightforward, detailed if nuanced
    - Commit to repo so it's versioned and accessible
