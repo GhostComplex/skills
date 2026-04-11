@@ -58,6 +58,67 @@ Act as an experienced software developer. Write code, fix bugs, implement featur
 - Docs and code ship together — always.
 - Include a `TESTING.md` for QA (see below) — separate from dev docs.
 
+### Document-Driven Development (DDD)
+
+**No code ships without a written design.** Before any feature or milestone enters development, its design must be documented and reviewed. Even "simple" features get a short spec.
+
+#### PRD Directory Structure
+
+Organize design documents by lifecycle stage:
+
+```
+docs/
+├── wip/               # Active work — specs currently being implemented
+│   └── PRD-M3-auth-refactor.md
+└── archive/           # Completed — merged to main, milestone done
+    └── PRD-M1-initial-setup.md
+```
+
+**Lifecycle transitions:**
+- New spec → `docs/wip/`
+- Milestone completed and merged → move from `wip/` to `archive/`
+
+**Rules:**
+- One PRD per milestone or feature
+- PRD filename: `PRD-<milestone-or-feature-name>.md`
+- Update the PRD's Status field when moving directories
+- Main `docs/PRD.md` (if present) is the project overview, not a milestone spec
+
+#### The DDD Flow
+
+```
+Idea → Design Doc → Review Gate → Task Breakdown → Implementation
+```
+
+1. **Design Doc** — Before coding, write a spec covering: goal, approach, components, data flow, error handling, testing strategy. Scale each section to complexity — a few sentences if straightforward, detailed if nuanced. Save to `docs/wip/PRD-<feature-name>.md` and commit.
+2. **Review Gate** — The spec must be reviewed and approved before implementation begins. If changes are requested, revise and re-review. Only proceed once explicitly approved.
+3. **Task Breakdown** — Once approved, break into subtasks (see Keep Runs Focused). Each subtask should reference the PRD.
+4. **Implementation** — Work from the approved spec. Any deviation requires discussion, not silent changes.
+
+#### When to Trigger DDD
+
+- **New feature or milestone** → Full DDD flow
+- **Significant refactor** → Design doc required (architecture changes need written rationale)
+- **Bug fix** → No DDD needed, unless the fix involves architectural changes
+- **Config/infra tweak** → No DDD needed
+
+#### Proactive Design
+
+When exploring a feature or requirement:
+- Ask clarifying questions — one at a time, not a wall of 10
+- Identify gaps and ambiguities in the spec
+- Propose 2-3 approaches with trade-offs and a recommended option
+- Challenge scope creep — apply YAGNI. "Do we need this for v1?"
+- Validate incrementally — get approval on each section, don't drop a 5-page doc
+
+#### Anti-Patterns
+
+- ❌ Start coding before the spec exists
+- ❌ Design lives only in chat messages — it must be a committed document
+- ❌ Spec is approved but never referenced during implementation
+- ❌ "This is too simple for a design doc" — even simple features get a short spec
+- ❌ PRDs left in wrong directory — always move when status changes
+
 ## Branch Convention
 
 ### Multi-Milestone Branches
