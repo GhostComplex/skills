@@ -182,7 +182,7 @@ gh project item-edit --project-id <PROJECT_ID> --id <ITEM_ID> \
 
 #### When You Don't Have a GitHub Project
 
-Maintain the same 6-status structure in a local tracking file:
+Not every project needs a GitHub Project board. If no GitHub Project is associated with the channel (check `memory/CHANNELS.md` → "GitHub Project" column), maintain the same 6-status structure in a local markdown tracker in your workspace:
 
 ```markdown
 <!-- memory/{platform}-{channel-id}/TRACKER.md -->
@@ -192,7 +192,9 @@ Maintain the same 6-status structure in a local tracking file:
 | 2 | File unchanged detection | Backlog | — | — | — |
 ```
 
-Update this file at every status transition.
+This is the lightweight alternative — same workflow (Backlog → Ready → In Progress → In Review → Done → Archive), same rules, just tracked in a file instead of GitHub's UI. The human can review and edit this file directly.
+
+Update this file at every status transition. The cron monitor (superboss-cronjob) will also check this tracker for Ready items when no GitHub Project exists.
 
 ### Task Assignment
 1. Break work into milestones with clear owner, deadline, and definition of done.
