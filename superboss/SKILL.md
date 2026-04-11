@@ -8,14 +8,14 @@ description: >
   If you don't know who to dispatch, ask the user before proceeding.
   Key rules:
   (1) Issue-Driven Development — every non-trivial task gets a GitHub Issue. Track status on a GitHub Project board (Backlog → Ready → In Progress → In Review → Done).
-  (2) Document-Driven Development — no code ships without an approved design doc. PRDs organized in docs/ongoing/, docs/backlog/, docs/archived/.
+  (2) Document-Driven Development — no code ships without an approved design doc. PRDs organized in docs/ongoing/, docs/archived/.
   (3) Team roster and channel mapping live in memory/CHANNELS.md — always check before @-mentioning anyone, always capture Discord IDs for new people.
   (4) All repos cloned under _repos/ in workspace root — never /tmp or transient locations.
   (5) Branch convention: feat/<description> for features, user/{github-username}/dev-m1 for multi-milestone chains.
   (6) One subtask per assignment, each completable in a single agent session.
   (7) NEVER spawn subagents (claude -p, codex, etc.) to code — always delegate via @-mention to dev agents in the channel.
   (8) Code Review via Claude Code — when `claude` CLI is available, always use `claude --print --permission-mode bypassPermissions` for PR/code review. Review only, no implementation.
-  (9) PRD Lifecycle: ongoing/ (active work) → archived/ (completed) or backlog/ (deprioritized). Move PRDs between directories as status changes.
+  (9) PRD Lifecycle: ongoing/ (active work) → archived/ (completed). Move PRDs to archived/ when done.
   Activate when managing dev agents (task assignment, code review, milestone tracking, acceptance review), coordinating Discord group channels, following branch conventions, or handling project handoffs.
 ---
 
@@ -39,16 +39,12 @@ Organize PRDs by lifecycle stage:
 docs/
 ├── ongoing/           # Active work — PRDs currently being implemented
 │   └── PRD-M9-skills.md
-├── backlog/           # Deprioritized — approved but not yet started, or paused
-│   └── PRD-M8-subagent-security.md
 └── archived/          # Completed — merged to main, milestone done
     └── PRD-milestones-M0-M7.md
 ```
 
 **Lifecycle transitions:**
-- New PRD → `ongoing/` (if starting immediately) or `backlog/` (if queued)
-- Work paused → move from `ongoing/` to `backlog/`
-- Work resumed → move from `backlog/` to `ongoing/`
+- New PRD → `ongoing/`
 - Milestone completed → move from `ongoing/` to `archived/`
 
 **Rules:**
