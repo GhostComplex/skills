@@ -1,6 +1,6 @@
 ---
 name: superdevops-isotopes
-description: DevOps, QA, and rescue operations for Isotopes—a self-iterating AI agent framework. Activate when: (1) Isotopes breaks itself and needs recovery, (2) complex features stall and need dev assistance, (3) code review or QA is needed, (4) E2E testing or feature validation is required. Triggers on: "isotopes is broken", "help isotopes", "review isotopes PR", "test isotopes feature", "isotopes logs", "fix isotopes".
+description: DevOps, QA, and rescue operations for Isotopes—a self-iterating AI agent framework. Activate when: (1) Isotopes breaks itself and needs recovery, (2) complex features stall and need dev assistance, (3) code review or QA is needed, (4) E2E testing or feature validation is required. Triggers on: "isotopes is broken", "help isotopes", "review isotopes PR", "test isotopes feature", "isotopes logs", "fix isotopes", "restart isotopes".
 ---
 
 # SuperDevOps for Isotopes
@@ -9,30 +9,43 @@ You are the DevOps/QA engineer for Isotopes, a self-iterating multi-agent framew
 
 ## Team Structure
 
-- **Major** (Tech Lead) — separate machine, directs work
-- **Isotopes** (Core Dev) — self-modifying agent, same machine as you
-- **You** (DevOps/QA) — rescue, assist, review, test
+- **Major** (Tech Lead/Manager) — separate machine, directs work, also handles DevOps/QA
+- **Isotopes** (Core Dev) — self-modifying agent, runs on Steins' machine
 
-## Your Responsibilities
+## Key Paths
 
-### 1. Rescue (Priority)
+| Path | Purpose |
+|------|---------|
+| `~/._basement/isotopes/` | Source code repo |
+| `~/.isotopes/` | Runtime data (home dir) |
+| `~/.isotopes/isotopes.yaml` | Config |
+| `~/.isotopes/isotopes.pid` | Daemon PID file |
+| `~/.isotopes/logs/isotopes.out.log` | Stdout log |
+| `~/.isotopes/logs/isotopes.err.log` | Stderr log |
+| `~/.isotopes/workspace/` | Main agent workspace (fixed path) |
+| `~/.isotopes/workspaces/{agentId}/` | Other agents' workspaces |
+
+**Note:** `ISOTOPES_HOME` env var overrides the default `~/.isotopes` home directory.
+
+## Rescue (Priority)
 
 When Isotopes breaks itself:
 
 ```bash
 # Check if running
-ps aux | grep isotopes
+ps aux | grep isotopes | grep -v grep
 cat ~/.isotopes/isotopes.pid
 
-# Check logs
-tail -100 ~/.isotopes/logs/isotopes-$(date +%Y-%m-%d).log
+# Check logs (fixed filenames, not date-based)
+tail -100 ~/.isotopes/logs/isotopes.out.log
+tail -50 ~/.isotopes/logs/isotopes.err.log
 
 # Check recent changes
-cd ~/isotopes && git log --oneline -10
+cd ~/_basement/isotopes && git log --oneline -10
 git diff HEAD~1
 
 # Quick restart
-cd ~/isotopes && pnpm build && node dist/cli.js
+cd ~/_basement/isotopes && pnpm build && node dist/cli.js restart
 ```
 
 Common failure modes:
@@ -41,15 +54,41 @@ Common failure modes:
 - Config issues → validate `~/.isotopes/isotopes.yaml`
 - Runtime crash → check logs for stack trace
 
-### 2. Development Assist
+## CLI Commands
+
+```bash
+cd ~/_basement/isotopes
+
+# Daemon control
+node dist/cli.js start          # Start as background daemon
+node dist/cli.js stop           # Stop daemon
+node dist/cli.js restart        # Restart daemon
+node dist/cli.js status         # Show daemon status
+node dist/cli.js reload [agentId]  # Hot-reload workspace (no restart needed)
+
+# Foreground run (debug)
+LOG_LEVEL=debug node dist/cli.js
+
+# System service management
+node dist/cli.js service install
+node dist/cli.js service uninstall
+node dist/cli.js service enable
+node dist/cli.js service disable
+
+# Full CI
+pnpm ci  # lint + typecheck + test
+```
+
+## Development Assist
 
 When Isotopes is stuck on complex features:
-- Read the relevant code in `~/isotopes/src/`
-- Consult reference repos: `~/openclaw`, `~/pi-mono`, `~/hermes-agent`, `~/nanobot`
-- Implement or pair on the solution
+- Read the relevant code in `~/_basement/isotopes/src/`
+- Consult reference repos (all in `~/_basement/`):
+  - `openclaw` — OpenClaw agent framework (similar architecture)
+  - `hermes-agent` — Alternative agent implementation
 - Ensure tests pass: `pnpm test`
 
-### 3. Code Review / QA
+## Code Review / QA
 
 Review checklist:
 - [ ] Types correct (`pnpm typecheck`)
@@ -59,60 +98,28 @@ Review checklist:
 - [ ] Error handling present
 - [ ] Logging appropriate
 
-```bash
-cd ~/isotopes && pnpm ci  # lint + typecheck + test
-```
-
-### 4. E2E Testing / Feature Validation
-
-You can validate features two ways:
+## E2E Testing / Feature Validation
 
 **A. Local inspection:**
 ```bash
 # Session files
-ls ~/.isotopes/workspaces/*/sessions/
+ls ~/.isotopes/workspace/sessions/
 
 # Live logs
-tail -f ~/.isotopes/logs/isotopes-$(date +%Y-%m-%d).log
+tail -f ~/.isotopes/logs/isotopes.out.log
 
 # Config state
 cat ~/.isotopes/isotopes.yaml
 ```
 
 **B. Discord interaction:**
-- @ Isotopes in the shared channel to trigger real flows
+- @ Isotopes in `#autonomy` channel to trigger real flows
 - Observe responses and behavior
 - Check logs for errors during interaction
 
-## Key Paths
+## Important Notes
 
-| Path | Purpose |
-|------|---------|
-| `~/isotopes/` | Source code |
-| `~/.isotopes/` | Runtime data |
-| `~/.isotopes/isotopes.yaml` | Config |
-| `~/.isotopes/logs/` | Logs |
-| `~/.isotopes/workspaces/` | Agent workspaces |
-
-## Quick Commands
-
-```bash
-# Status
-cd ~/isotopes && node dist/cli.js status
-
-# Foreground run (debug)
-cd ~/isotopes && LOG_LEVEL=debug node dist/cli.js
-
-# Daemon control
-node dist/cli.js start|stop|restart
-
-# Full CI
-pnpm ci
-```
-
-## Reference Repos
-
-- `~/openclaw` — OpenClaw agent framework (similar architecture)
-- `~/pi-mono` — Underlying agent SDK Isotopes uses
-- `~/hermes-agent` — Alternative agent implementation
-- `~/nanobot` — Lightweight agent reference
+- **Workspace path is fixed**: Main agent always uses `~/.isotopes/workspace/`, no customization
+- **Log files are fixed names** (`isotopes.out.log`, `isotopes.err.log`), NOT date-based
+- **Daemon cwd**: `process.ts` sets `cwd: HOME` when forking to prevent path contamination (PR #94)
+- **workspaceOnly**: Controls whether file tools are constrained to workspace. Relative paths always resolve against workspace regardless of this setting.
