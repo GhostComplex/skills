@@ -87,6 +87,23 @@ Act as an experienced software developer. Write code, fix bugs, implement featur
 6. Address review comments promptly.
 7. Squash or rebase as required by the project.
 
+### Replying to PR Comments
+
+When responding to PR review comments, use inline replies — not PR-level comments.
+
+**Correct:** Use the GitHub API to reply directly to each comment:
+```bash
+gh api repos/{owner}/{repo}/pulls/comments/{comment_id}/replies -f body="Your reply"
+```
+
+**Incorrect:** Using `gh pr comment` — this adds a top-level PR comment, not an inline reply. Reviewers won't see your response in context.
+
+**Why it matters:**
+- Inline replies show up threaded under the original comment
+- Reviewers see the response in context with the code
+- GitHub marks conversations as "resolved" properly
+- Top-level PR comments get lost in longer discussions
+
 ## Multi-Milestone Development
 
 ### Planning
@@ -116,11 +133,39 @@ Act as an experienced software developer. Write code, fix bugs, implement featur
 - Verify PR/branch status before committing to an existing branch.
 - If a PR is already merged, open a new one.
 
-## Channel-Organized Memory
+## Memory Management
 
-Store project notes by channel:
+### Session Startup
+1. Read today's + yesterday's daily notes
+2. Review recent decisions/blockers before starting new work
+
+### Single Project: Simple Flat Structure
+When only tracking one project, use a single daily file with sections:
 ```
-memory/{platform}-{channel-id}/
+memory/YYYY-MM-DD.md
+```
+
+Contents:
+```markdown
+# YYYY-MM-DD
+
+## Project Progress
+- PR #X merged
+- M0 scope confirmed
+- Key decisions made
+
+## Decisions & Blockers
+- Decision: [rationale]
+- Blocked on: [issue]
+
+## Other Notes
+- ...
+```
+
+### Multi-Project: Channel-Organized Memory
+When tracking multiple projects/channels simultaneously, organize by channel:
+```
+memory/{platform}-{channel-id}/YYYY-MM-DD.md
 ```
 
 Map channels in `memory/CHANNELS.md`:
@@ -129,6 +174,18 @@ Map channels in `memory/CHANNELS.md`:
 |---|---|---|---|
 | {id} | {platform} | {platform}-{id} | {project-description} |
 ```
+
+### What to Capture
+- Important decisions with rationale
+- Scope changes (milestone reordering, feature cuts)
+- Language/communication rules
+- PR status and blockers
+- Lessons learned
+
+### Maintenance
+- Append updates as they happen — don't wait
+- Review and consolidate weekly
+- Archive completed milestone notes
 
 ## Public Repo Hygiene
 
@@ -168,7 +225,7 @@ Every coding subtask MUST be executed via `claude -p --dangerously-skip-permissi
 
 ```
 exec({
-  command: "claude -p --dangerously-skip-permissions 'Your focused task prompt here'",
+  command: "claude -p --permission-mode bypassPermissions 'Your focused task prompt here'",
   workdir: "/path/to/repo",
   timeout: 1800,
   yieldMs: 1800000
@@ -177,7 +234,8 @@ exec({
 
 **How it works:**
 - `claude -p` runs in print mode — no interactive TUI, output returned directly
-- `--dangerously-skip-permissions` auto-approves all file writes and shell commands (no TTY needed)
+- `--permission-mode bypassPermissions` auto-approves all file writes and shell commands (no TTY needed, no confirmation dialog)
+- `timeout: 1800` (30 min) sets the max execution time
 - `yieldMs: 1800000` (30 min) keeps the exec synchronous — without this, OpenClaw backgrounds it after 10 seconds and results won't come back in the same turn
 - Synchronous exec = results come back in the same agent turn → you report to the channel immediately
 - No background process, no missed completion events
