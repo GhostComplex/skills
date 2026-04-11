@@ -1,6 +1,6 @@
 ---
 name: superdevops-isotopes
-description: DevOps, QA, and rescue operations for Isotopes—a self-iterating AI agent framework. Activate when: (1) Isotopes breaks itself and needs recovery, (2) complex features stall and need dev assistance, (3) code review or QA is needed, (4) E2E testing or feature validation is required. Triggers on: "isotopes is broken", "help isotopes", "review isotopes PR", "test isotopes feature", "isotopes logs", "fix isotopes", "restart isotopes".
+description: "DevOps, QA, and rescue operations for Isotopes—a self-iterating AI agent framework. Activate when: (1) Isotopes breaks itself and needs recovery, (2) complex features stall and need dev assistance, (3) code review or QA is needed, (4) E2E testing or feature validation is required. Triggers on: 'isotopes is broken', 'help isotopes', 'review isotopes PR', 'test isotopes feature', 'isotopes logs', 'fix isotopes', 'restart isotopes'."
 ---
 
 # SuperDevOps for Isotopes
