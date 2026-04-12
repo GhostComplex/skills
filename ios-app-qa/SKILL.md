@@ -445,3 +445,4 @@ Every ❌ item → GitHub issue with screenshot + expected behavior. Link back t
 - **Clean build before QA** — always `rm -rf DerivedData` before verification builds
 - **Discover before assuming** — always run `xcodebuild -list` first; never hardcode scheme/target names
 - **Use `xcresulttool export attachments`** — modern Xcode has a proper API; don't brute-force scan data files
+- **Verify PRD is up-to-date before acceptance** — if PRD and code disagree, check which one is correct (may be PRD not updated after a prior decision); don't blindly mark code as ❌ against an outdated PRD
