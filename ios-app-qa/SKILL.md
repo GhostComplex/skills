@@ -335,6 +335,13 @@ Every QA round follows this sequence. No skipping steps.
 - User flows (every interaction chain → flow test case with screenshot sequence)
 - Edge cases (empty states, boundary values, error states)
 
+**⚠️ Before writing test cases, verify PRD and design spec are in sync.** Walk through every PRD flow and check:
+- Does the design spec have a corresponding screen?
+- Do text/copy/labels match between PRD and design?
+- If they disagree, resolve the conflict FIRST (update whichever is wrong), then write test cases.
+
+PRD ↔ design spec 不一致会导致验收时用错标准判定代码"有问题"。
+
 Output: a filled `references/qa-checklist-template.md` with all items listed, results column blank.
 
 **No test cases = no acceptance.** Do not start building/installing until the checklist is complete and reviewed.
