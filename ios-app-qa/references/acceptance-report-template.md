@@ -27,42 +27,64 @@
 
 ## Verification Results
 
+Each section shows Design vs Actual side by side, followed by the verification table.
+
 ### 1. First Launch & Onboarding
 
-| # | Item | Result | Screenshot | Notes |
-|---|------|--------|------------|-------|
-| 1.1 | [description] | ✅/❌/⏳ | [filename or link] | [what you see] |
-| 1.2 | ... | | | |
+| Design | Actual |
+|--------|--------|
+| ![design](./qa-screenshots/round/design-onboarding.png) | ![actual](./qa-screenshots/round/actual-onboarding.png) |
+
+| # | Item | Result | Notes |
+|---|------|--------|-------|
+| 1.1 | [description] | ✅/❌/⏳ | [what you actually see vs what design shows] |
+| 1.2 | ... | | |
 
 ### 2. Home / Main Screen
 
-| # | Item | Result | Screenshot | Notes |
-|---|------|--------|------------|-------|
-| 2.1 | ... | | | |
+| Design | Actual |
+|--------|--------|
+| ![design](./qa-screenshots/round/design-home.png) | ![actual](./qa-screenshots/round/actual-home.png) |
+
+| # | Item | Result | Notes |
+|---|------|--------|-------|
+| 2.1 | ... | | |
 
 ### 3. Core Features
 
-| # | Item | Result | Screenshot | Notes |
-|---|------|--------|------------|-------|
-| 3.1 | ... | | | |
+| Design | Actual |
+|--------|--------|
+| ![design](./qa-screenshots/round/design-feature.png) | ![actual](./qa-screenshots/round/actual-feature.png) |
+
+| # | Item | Result | Notes |
+|---|------|--------|-------|
+| 3.1 | ... | | |
 
 ### 4. Design Fidelity
 
-| # | Item | Result | Screenshot | Notes |
-|---|------|--------|------------|-------|
-| 4.1 | ... | | | |
+| Design | Actual |
+|--------|--------|
+| ![design](./qa-screenshots/round/design-detail.png) | ![actual](./qa-screenshots/round/actual-detail.png) |
+
+| # | Item | Result | Notes |
+|---|------|--------|-------|
+| 4.1 | ... | | |
 
 ### 5. Notifications
 
-| # | Item | Result | Screenshot | Notes |
-|---|------|--------|------------|-------|
-| 5.1 | ... | | | |
+| Design | Actual |
+|--------|--------|
+| ![design](./qa-screenshots/round/design-notification.png) | ![actual](./qa-screenshots/round/actual-notification.png) |
+
+| # | Item | Result | Notes |
+|---|------|--------|-------|
+| 5.1 | ... | | |
 
 ### 6. Edge Cases
 
-| # | Item | Result | Screenshot | Notes |
-|---|------|--------|------------|-------|
-| 6.1 | ... | | | |
+| # | Item | Result | Notes |
+|---|------|--------|-------|
+| 6.1 | ... | | |
 
 ---
 
@@ -71,18 +93,6 @@
 | Issue # | Title | Priority | Checklist Item | Type |
 |---------|-------|----------|----------------|------|
 | #XX | [title] | P0/P1/P2 | X.X | Spec issue / Dev issue |
-
----
-
-## Design Fidelity Notes
-
-Discrepancies found during side-by-side comparison with design spec:
-
-**Spec issues (PM to fix):**
-- [ ] [description — what spec says vs what it should say]
-
-**Dev issues (filed as GitHub issues):**
-- [ ] #XX — [description]
 
 ---
 
