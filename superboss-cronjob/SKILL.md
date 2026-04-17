@@ -33,8 +33,9 @@ If it does, run: gh project item-list <PROJECT_NUMBER> --owner <OWNER> --format 
 Filter for items in the "Ready" status column. If any Ready items exist:
 - List them in your report
 - For each Ready item, try to dispatch it: assign to the appropriate dev agent via @-mention in the channel, move to In Progress, and update the design doc if needed
-- If no dev agent is available or you're unsure who should do it, flag it in the report and ask
-- Goal: keep the Ready column empty by dispatching work promptly
+- Do NOT ask for permission — dispatch immediately. The human already approved by moving to Ready.
+- If no dev agent is available, flag it in the report
+- Goal: keep the Ready column empty at all times. As long as there are Ready items, dispatch them all.
 If no GitHub Project is associated, skip this step.
 
 Be concise and actionable.
