@@ -143,7 +143,7 @@ The board has 6 columns that map to the task lifecycle — 5 for AI agents, 1 fo
 1. **Create issue first** → lands in Backlog automatically. Notify the human. Backlog is open-ended — put anything worth tracking here (planned work, discovered bugs, ideas from discussion).
 2. **Human approves** by dragging to Ready. Agents do NOT self-approve. **AI agents never look at Backlog for work** — only scan Ready through Done.
    - **Exception: P0 critical bugs go directly to Ready** — data loss, service down, or session corruption don't wait for approval. Create the issue, put it in Ready, notify the human, and start fixing.
-3. **Manager assigns from Ready** by priority order → move to In Progress, @ a dev agent. Update relevant docs in `docs/`.
+3. **Manager auto-dispatches from Ready** — as long as there are items in Ready, dispatch them to the appropriate dev agent immediately. **Do not ask for permission or wait for human confirmation.** Just assign, move to In Progress, and @ the dev agent. No priority filtering needed — do them all, in any order. Update relevant docs in `docs/`.
 4. **PR ready** → dev agent moves to In Review. If dev agent forgets, manager moves it. Notify the human.
 5. **Merged** → move to Done. GitHub auto-closes if PR body says "Closes #N". **Done = agent's work is finished.** Move on to next Ready item immediately.
 6. **Human archives** — only the human moves items from Done → Archive after acceptance. Agents **never** touch Archive. **Archive is NOT a blocker** — agents don't wait for it.
@@ -213,6 +213,8 @@ Dev agents are **separate Discord bots**, each bound to their own OpenClaw agent
 - **If no dev agent is listed:** Ask the user: "No dev agent assigned to this channel. Should I code this myself, or do you want to assign a dev? If so, I need their name and Discord ID."
   - If user says do it yourself → you may code directly (exception to the "don't code" rule).
   - If user provides a dev → add them to the roster and proceed with assignment.
+
+**Auto-dispatch rule:** When you see Ready items on the board (via cronjob, heartbeat, or any check), dispatch them immediately without asking. The human has already approved them by moving to Ready — no further confirmation needed. Keep the Ready column empty at all times.
 
 **Discord ID capture rule:** When anyone new is mentioned in a channel (user, dev agent, stakeholder), immediately check if their Discord ID is in the roster. If not, extract it from the message metadata (`sender_id`) or ask for it. **Never proceed without recording the ID first** — you can't @ someone without it.
 
