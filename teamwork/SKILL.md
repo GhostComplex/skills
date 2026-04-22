@@ -37,17 +37,7 @@ gh project list --owner $(gh repo view --json owner -q '.owner.login') --format 
 ```
 
 - If a project is found, use it for all status management throughout the workflow.
-- If no project exists, create a local tracking file at `.claude/project-status.json` with format:
-  ```json
-  {
-    "issues": {
-      "<issue_number>": {
-        "status": "Backlog|Ready|In progress|In review|Done",
-        "updated_at": "<ISO timestamp>"
-      }
-    }
-  }
-  ```
+- If no project exists, skip project-based status tracking. Issue state is managed via GitHub issue labels and PR status instead.
 - Cache the project ID for later steps.
 
 ### 1.2 Discuss with User
@@ -92,13 +82,24 @@ Create `docs/prd/<feature-slug>.md`:
 
 ### 1.4 Create GitHub Issue
 
+Commit the PRD first so it's available in the repo:
+
+```bash
+git checkout -b docs/<feature-slug>-prd main
+git add docs/prd/<feature-slug>.md
+git commit -m "docs: add PRD for <feature-slug>"
+git push -u origin docs/<feature-slug>-prd
+```
+
+Then create the issue:
+
 ```bash
 gh issue create --title "<title>" --body "$(cat docs/prd/<feature-slug>.md)"
 ```
 
 - The issue body IS the PRD content.
 - Add relevant labels if the repo has them.
-- Move issue to **Ready** in the GitHub Project (or update local status).
+- Move issue to **Ready** in the GitHub Project (if available).
 
 ### 1.5 Hand Off
 
@@ -108,15 +109,13 @@ Report the issue number and PRD path to the orchestrator. The lead's active work
 
 ### 2.1 Pick Up Issue
 
-- Move issue to **In progress** (GitHub Project or local status).
+- Move issue to **In progress** (GitHub Project, if available).
 
 ### 2.2 Create Worktree
 
 The developer MUST work in a worktree — never commit directly to main.
 
-```bash
-git worktree add .claude/worktrees/<feature-slug> -b <feature-slug> main
-```
+Use the built-in `EnterWorktree` tool with `name: "<feature-slug>"`. This handles CWD switching, cache clearing, and cleanup automatically. Do NOT use raw `git worktree add` commands.
 
 All development happens inside this worktree directory.
 
@@ -131,7 +130,6 @@ All development happens inside this worktree directory.
 ### 2.4 Open PR
 
 ```bash
-cd <worktree-path>
 git push -u origin <feature-slug>
 gh pr create --title "<title>" --body "$(cat <<'EOF'
 ## Summary
@@ -149,7 +147,7 @@ EOF
 ```
 
 - The PR body MUST include `Closes #<issue_number>` to link the issue.
-- Move issue to **In review** (GitHub Project or local status).
+- Move issue to **In review** (GitHub Project, if available).
 
 ### 2.5 Hand Off
 
@@ -179,13 +177,15 @@ Review focus areas:
 gh pr review <pr_number> --comment --body "<review summary>"
 ```
 
-For specific line comments, use the GitHub API:
+For specific line comments, use `gh pr review` with `--comment` for general feedback, or use the GitHub API with a JSON input file:
 
 ```bash
-gh api repos/{owner}/{repo}/pulls/<pr_number>/reviews --method POST \
-  -f body="<summary>" \
-  -f event="REQUEST_CHANGES|APPROVE" \
-  -f comments='[{"path":"<file>","line":<line>,"body":"<comment>"}]'
+# Write review payload to a temp file, then submit
+jq -n '{
+  body: "<summary>",
+  event: "REQUEST_CHANGES",
+  comments: [{"path":"<file>","line":<line>,"body":"<comment>"}]
+}' | gh api repos/{owner}/{repo}/pulls/<pr_number>/reviews --method POST --input -
 ```
 
 The review verdict is one of:
@@ -218,30 +218,26 @@ When the reviewer approves:
 
 After the user confirms the PR is merged (or you detect it via `gh pr view`):
 
-1. Move issue to **Done** (GitHub Project or local status)
-2. Remove the worktree:
-   ```bash
-   git worktree remove .claude/worktrees/<feature-slug>
-   git branch -d <feature-slug>
-   ```
+1. Move issue to **Done** (GitHub Project, if available)
+2. Use `ExitWorktree` with `action: "remove"` to clean up the worktree.
 3. Report completion
 
 ## Agent Team Setup
 
-Create a team named `teamwork-<short-id>` (first 7 chars of HEAD SHA or issue number).
+Create a team named `teamwork-<feature-slug>` (derived from the feature description or issue number).
 
 ### Spawning
 
-Spawn all 3 teammates at team creation, but they activate sequentially:
+Spawn agents on-demand as each phase begins — do NOT spawn all agents upfront:
 
-1. **lead** — starts immediately (Step 1)
-2. **developer** — waits for lead to hand off issue number (Step 2)
-3. **reviewer** — waits for developer to hand off PR number (Step 3)
+1. **lead** — spawn immediately (Step 1)
+2. **developer** — spawn when lead hands off the issue number (Step 2)
+3. **reviewer** — spawn when developer hands off the PR number (Step 3)
 
 Each teammate receives:
 - Their role description and responsibilities from this document
 - The current repo's CLAUDE.md (if it exists) for project conventions
-- The GitHub project ID (or local status file path)
+- The GitHub project ID (if available)
 
 ### Teammate Prompt Template
 
@@ -255,7 +251,7 @@ You are the {ROLE} in a feature development team.
 {CLAUDE.md contents, if available}
 
 ## GitHub Project
-{Project ID and status management instructions, or local status file path}
+{Project ID and status management instructions, if a GitHub Project was found}
 
 ## Current State
 {What has been completed so far and what you need to do next}
@@ -268,10 +264,9 @@ You are the {ROLE} in a feature development team.
 
 ### Worktree Usage
 
-- Developer MUST use `git worktree add` to create an isolated working copy.
-- The worktree path is `.claude/worktrees/<feature-slug>`.
+- Developer MUST use the `EnterWorktree` tool to create an isolated working copy.
 - Developer works entirely within the worktree — all edits, commits, and pushes happen there.
-- Worktree is cleaned up in Step 4 after merge.
+- Use `ExitWorktree` with `action: "remove"` in Step 4 after merge for cleanup.
 
 ## Status Management Summary
 
@@ -291,7 +286,7 @@ gh project item-list <project_number> --owner <owner> --format json | jq '.items
 gh project item-edit --project-id <project_id> --id <item_id> --field-id <status_field_id> --single-select-option-id <option_id>
 ```
 
-If the `gh project` commands fail (permissions, no project), fall back to the local `.claude/project-status.json` approach silently.
+If the `gh project` commands fail (permissions, no project), fall back to tracking status via GitHub issue labels and PR state.
 
 ## Rules
 
@@ -302,3 +297,4 @@ If the `gh project` commands fail (permissions, no project), fall back to the lo
 - **Lead manages status.** Only the lead (or orchestrator) updates project/issue status.
 - **Sequential handoff.** Each role completes before the next begins. No parallel implementation and review.
 - **User approval gates:** Requirements must be approved before PRD. PRD must be approved before issue creation.
+- **Handle `gh` failures gracefully.** If any `gh` command fails (auth, permissions, branch protection), report the error to the orchestrator instead of proceeding blindly.
