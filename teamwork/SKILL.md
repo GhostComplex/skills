@@ -8,17 +8,17 @@ argument-hint: "[feature description to discuss, or issue# to resume]"
 
 You are the **orchestrator**. You drive a feature from idea to merge-ready PR in a single session. You handle requirements, design, implementation, and PR creation yourself. Only code review is delegated — to parallel review agents with distinct perspectives.
 
-Each `/teamwork` session runs in its own tmux panel with its own worktree. The user manages parallel tasks by opening separate panels.
+Each `/teamwork` session runs in its own terminal process (tmux window or separate terminal) with its own worktree. Tmux panes within a window are reserved for agent teams — use separate windows or terminal processes for parallel features.
 
 ## Session Isolation
 
-Multiple `/teamwork` panels can work on the same repo simultaneously without interfering. The **feature-slug** is the isolation key (analogous to Discord's channel ID in superboss).
+Multiple `/teamwork` sessions can work on the same repo simultaneously without interfering, as long as they run in **separate tmux windows or terminal processes** (not panes — panes are used by agent teams). The **feature-slug** is the isolation key (analogous to Discord's channel ID in superboss).
 
 ### How Isolation Works
 
 | Layer | Isolation mechanism |
 |-------|-------------------|
-| **Git** | Each panel gets its own worktree (`EnterWorktree` with unique feature-slug) → separate branch, separate working directory. Commits and pushes never collide. |
+| **Git** | Each session gets its own worktree (`EnterWorktree` with unique feature-slug) → separate branch, separate working directory. Commits and pushes never collide. |
 | **PRD** | Each feature writes to `docs/prd/<feature-slug>.md` — unique path per feature. |
 | **Issues/PRs** | Each feature creates its own issue and PR — no shared state. |
 | **Tracking** | `.teamwork/<feature-slug>/` — each feature gets its own directory (not a shared JSON file). |
@@ -26,10 +26,10 @@ Multiple `/teamwork` panels can work on the same repo simultaneously without int
 
 ### Avoiding Conflicts
 
-- **Never share a feature-slug across panels.** Each panel = unique feature-slug = unique worktree.
+- **Never share a feature-slug across sessions.** Each session = unique feature-slug = unique worktree.
 - **PRDs are committed on the feature branch**, not on main — so parallel PRD commits don't conflict.
 - **`.teamwork/` uses per-feature directories**, not a single shared JSON file — no concurrent write risk.
-- If the user asks to resume an in-progress feature, it should be in the **same panel** that started it (same worktree context).
+- If the user asks to resume an in-progress feature, it should be in the **same session** that started it (same worktree context).
 
 ### Feature-Slug as Session ID
 
@@ -62,7 +62,7 @@ git remote get-url origin 2>/dev/null
         └── round-2.md
 ```
 
-Each feature gets its own directory — no shared state across panels.
+Each feature gets its own directory — no shared state across sessions.
 
 `status.json` (per-feature):
 ```json
@@ -619,5 +619,5 @@ After the PR is merged (auto-merged in 6.2a, or detected/confirmed in 6.2b):
 - **Max 3 CI fix attempts.** Escalate to human after 3 failures.
 - **User approval gates:** Requirements approved → PRD approved → issues in Backlog → human promotes to Ready → implementation starts.
 - **Handle failures gracefully.** If any `gh` command fails, report the error to the user instead of proceeding blindly.
-- **One panel, one task.** Each `/teamwork` session handles one feature in one worktree. Parallel tasks = separate tmux panels.
+- **One session, one task.** Each `/teamwork` session handles one feature in one worktree. Parallel features = separate tmux windows or terminal processes (not panes — those are used by agent teams).
 - **Notify proactively.** When you create issues, change status, or complete work — tell the user. Don't make them discover state changes by checking the board.
