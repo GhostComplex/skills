@@ -86,7 +86,7 @@ Use this template when onboarding to a new project channel.
 ## Milestones
 | # | Description | Status | Branch |
 |---|---|---|---|
-| M1 | {desc} | ⬜/✅ | feat/{name}/dev-m1 |
+| M1 | {desc} | ⬜/✅ | feat/{name}-s1 |
 
 ## Remaining Gaps
 - {item} — {blocker/owner}
@@ -114,7 +114,7 @@ When a dev agent changes mid-project:
 Before marking a milestone complete:
 
 - [ ] All tests passing
-- [ ] Code pushed to correct branch (`feat/{name}/dev-{milestone}`)
+- [ ] Code pushed to correct branch (`feat/{name}-s{n}` or `<type>/<short-description>`)
 - [ ] PR opened (if required) with project owner tagged for review
 - [ ] Docs updated (PRD status, README, tech notes)
 - [ ] Memory files updated in `memory/{platform}-{id}/`

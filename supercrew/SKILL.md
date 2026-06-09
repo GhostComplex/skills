@@ -8,7 +8,7 @@ description: >
   (1) All repos under _repos/ — never /tmp.
   (2) Subtask sizing — one focused task per agent run, split large milestones upfront.
   (3) Minimum deliverable PRs — smallest reviewable unit, one concern per PR.
-  (4) Branch chain — dev-m1 → dev-m2 → dev-m3, each PR targets the previous milestone branch.
+  (4) Branch naming — `<type>/<short-description>` (feat/fix/chore/docs/refactor/test). Multi-stage work = sequential PRs to main with `-s1`, `-s2` suffix; no chained branches.
   (5) Design-first — no implementation without an approved spec.
   (6) Docs ship with code — documentation alongside every PR.
 ---
@@ -64,25 +64,26 @@ Act as an experienced software developer. Write code, fix bugs, implement featur
 
 #### PRD Directory Structure
 
-Organize design documents by lifecycle stage:
+**Always follow the repo's own `docs/README.md`** — it is authoritative. The structure below is the default when no `docs/README.md` exists yet.
+
+Default layout:
 
 ```
 docs/
-├── wip/               # Active work — specs currently being implemented
-│   └── PRD-M3-auth-refactor.md
-└── archive/           # Completed — merged to main, milestone done
-    └── PRD-M1-initial-setup.md
+├── README.md          # Authoritative organizational guide
+├── prd/               # All product / design specs (active and historical)
+│   └── PRD-<issue>-<topic>.md
+└── research/          # Investigations, RCAs, comparisons
+    └── RCA-<topic>.md
 ```
 
-**Lifecycle transitions:**
-- New spec → `docs/wip/`
-- Milestone completed and merged → move from `wip/` to `archive/`
-
 **Rules:**
-- One PRD per milestone or feature
-- PRD filename: `PRD-<milestone-or-feature-name>.md`
-- Update the PRD's Status field when moving directories
-- Main `docs/PRD.md` (if present) is the project overview, not a milestone spec
+- `docs/` root contains only `README.md`. All documents go in subdirectories.
+- One PRD per milestone or feature; update its `Status` field as it progresses.
+- PRD filename: `PRD-<issue>-<topic>.md` or `<topic>-m1.md`.
+- Drafts and in-flight specs go directly in `docs/prd/` — no separate `wip/` directory.
+- Truly stale, history-only documents are removed from the repo, not archived in-tree. If the project has a sibling docs archive repo, push them there.
+- Keep depth shallow: `docs/<category>/<file>.md`. Don't nest `docs/x/y/z/...`.
 
 #### The DDD Flow
 
@@ -90,7 +91,7 @@ docs/
 Idea → Design Doc → Review Gate → Task Breakdown → Implementation
 ```
 
-1. **Design Doc** — Before coding, write a spec covering: goal, approach, components, data flow, error handling, testing strategy. Scale each section to complexity — a few sentences if straightforward, detailed if nuanced. Save to `docs/wip/PRD-<feature-name>.md` and commit.
+1. **Design Doc** — Before coding, write a spec covering: goal, approach, components, data flow, error handling, testing strategy. Scale each section to complexity — a few sentences if straightforward, detailed if nuanced. Save to `docs/prd/PRD-<feature-name>.md` (per the repo's `docs/README.md`) and commit.
 2. **Review Gate** — The spec must be reviewed and approved before implementation begins. If changes are requested, revise and re-review. Only proceed once explicitly approved.
 3. **Task Breakdown** — Once approved, break into subtasks (see Keep Runs Focused). Each subtask should reference the PRD.
 4. **Implementation** — Work from the approved spec. Any deviation requires discussion, not silent changes.
@@ -117,19 +118,26 @@ When exploring a feature or requirement:
 - ❌ Design lives only in chat messages — it must be a committed document
 - ❌ Spec is approved but never referenced during implementation
 - ❌ "This is too simple for a design doc" — even simple features get a short spec
-- ❌ PRDs left in wrong directory — always move when status changes
+- ❌ PRDs placed at `docs/` root instead of the proper subdirectory
 
 ## Branch Convention
 
-### Multi-Milestone Branches
-- `feat/{feature-name}/dev-m1`, `feat/{feature-name}/dev-m2`, etc.
-- Each milestone branches from the previous one.
-- Open a PR per milestone for incremental review.
-- After PR, tag the project owner for review.
+**Single naming scheme: `<type>/<short-description>`.** Types: `feat`, `fix`, `chore`, `docs`, `refactor`, `test`, `ci`, `cleanup`.
 
-### Single-Feature Branches
-- Use a descriptive name: e.g. `fix/{issue-description}`, `feat/{short-description}`.
-- Never push directly to `main` or `dev` — always feature branch + PR.
+- `feat/structured-compaction`
+- `fix/discord-dm-dedupe`
+- `docs/m10-prd`
+
+### Multi-Stage Work
+- Break a milestone into sequential stages, each delivering its own PR **into `main`**.
+- Name stages with a suffix: `feat/<feature>-s1`, `feat/<feature>-s2`, etc.
+- **Do NOT chain branches** (s2 branching off s1). Each stage rebases on latest `main`.
+- Each stage PR is independently reviewable, testable, and mergeable.
+
+### Rules
+- Never push directly to `main` — always feature branch + PR.
+- After PR, tag the project owner for review.
+- Verify PR/branch status before committing to an existing branch. If the PR is already merged, open a new one.
 
 ## Commit Practices
 
@@ -263,7 +271,6 @@ Before every commit, verify:
 - [ ] No non-English characters (for public repos)
 - [ ] No build artifacts (`.skill`, `.DS_Store`, `node_modules/`, etc.)
 - [ ] Docs updated if behavior changed
-- [ ] `TESTING.md` updated if new testable features added
 - [ ] Public symbols exported from package entry point
 - [ ] Commit message is clear and in English
 - [ ] Diff reviewed as if you were the reviewer
@@ -276,76 +283,83 @@ Before every commit, verify:
 - Docker: use multi-stage builds, minimize image size, pin versions.
 - Database migrations: always reversible, test rollback.
 
-## Implementation: Delegating to Claude Code
+## Implementation: Delegating via `spawn_agent`
 
-**Do NOT implement code changes directly in the main session.** Your role is orchestrator — you design, plan, review, and delegate. Actual coding (writing files, running tests, committing) is done by Claude Code via synchronous exec.
+**Do NOT hand-write large patches yourself in the main session.** Your role is orchestrator — design, plan, review, delegate. Actual coding (file writes, test runs, commits, PRs) goes through the `spawn_agent` tool with `to: "coding"`.
 
-### The Rule: Always Use Claude Code CLI
+See the `coding-agent` skill for the full tool reference. This section covers the workflow rules.
 
-Every coding subtask MUST be executed via `claude -p --dangerously-skip-permissions`. Run it synchronously (not background) so results come back in the same turn.
+### The Rule: Always Use `spawn_agent({to: "coding"})` for Coding
+
+Every non-trivial coding subtask MUST be delegated via:
 
 ```
-exec({
-  command: "claude -p --permission-mode bypassPermissions 'Your focused task prompt here'",
-  workdir: "/path/to/repo",
-  timeout: 1800,
-  yieldMs: 1800000
+spawn_agent({
+  to: "coding",
+  content: "<focused task prompt>",
+  working_directory: "/abs/path/to/repo"
 })
 ```
 
-**How it works:**
-- `claude -p` runs in print mode — no interactive TUI, output returned directly
-- `--permission-mode bypassPermissions` auto-approves all file writes and shell commands (no TTY needed, no confirmation dialog)
-- `timeout: 1800` (30 min) sets the max execution time
-- `yieldMs: 1800000` (30 min) keeps the exec synchronous — without this, OpenClaw backgrounds it after 10 seconds and results won't come back in the same turn
-- Synchronous exec = results come back in the same agent turn → you report to the channel immediately
-- No background process, no missed completion events
-
-**One subtask = one exec run.** Don't batch unrelated work into one command.
+- The call is synchronous: it blocks until the spawned agent finishes and returns its final message.
+- One subtask = one `spawn_agent` call. Don't batch unrelated work.
+- `working_directory` is required for `coding` and must be an absolute path to the target repo (under `~/_repos/`).
+- **Never use `claude -p`, `codex`, or other CLI subprocess invocations directly for coding.** They bypass the orchestration layer.
 
 ### Report Back After Every Run
-After each Claude Code run completes, **always post a summary in the main channel**. Don't let results sit silently. Include:
+After each `spawn_agent` call returns, **post a summary in the channel**. Don't let results sit silently. Include:
 - ✅/❌ Status (passed/failed)
 - What was done (files changed, features implemented)
 - Test results (number passing, any failures)
 - PR link (if opened)
 - What's next (next subtask or blocker)
 
-### When NOT to use Claude Code
-Only skip Claude Code and work directly when ALL of these are true:
+### When NOT to delegate
+Skip `spawn_agent` and edit directly only when ALL of these are true:
 - The change is trivially small (a one-line fix, a typo)
-- No test run is needed
+- No build/test run is needed
 - It would take longer to write the prompt than to make the edit
 
-If in doubt, spawn Claude Code.
+If in doubt, delegate.
 
 ### Prompt Discipline
-- Always include the branch name, expected deliverables, and test/lint commands.
-- Include "commit AND push" — don't assume the agent will do it.
+- Always include the branch name, expected deliverables, and validation command (e.g. `pnpm build && pnpm test`).
+- Include "commit AND push, then open the PR" — don't assume the agent will do it.
 - Keep prompts focused: one concern per run.
+- State constraints explicitly ("don't touch tests", "keep public API stable", etc.).
 
 ### Keep Runs Focused
-- **One concern per run.** Don't combine unrelated deliverables (e.g. "write CI + docs + README + examples + tests") into a single prompt. Split into focused runs: "write the CI pipeline", then "write the README and API docs", then "write the examples".
+- **One concern per run.** Don't combine unrelated deliverables (e.g. "write CI + docs + README + examples + tests") into a single prompt. Split into focused runs.
 - **Rule of thumb:** If the prompt has more than 2-3 distinct deliverables, split it.
-- **Large milestones ≠ large prompts.** Break broad milestones into 2-3 sub-agent runs before launching. Budget the complexity upfront.
+- **Large milestones ≠ large prompts.** Break broad milestones into multiple `spawn_agent` runs before launching. Budget the complexity upfront.
 
 ### Minimum Deliverable PRs
 - **Each PR is the smallest reviewable unit.** One concern, one PR. Don't batch unrelated changes.
 - **A subtask = one PR.** If a milestone has 5 subtasks, that's 5 PRs, not 1 giant PR.
 - **Reviewable means testable.** Every PR should pass tests independently — no "this will work once the next PR lands."
 - **Don't wait to batch.** Open the PR as soon as the subtask is done. Smaller PRs get faster, better reviews.
-- **Branch chain:** dev-m1 → dev-m2 → dev-m3. Each PR targets the previous milestone branch, not main (unless it's the first milestone).
+- **Each PR targets `main`.** Multi-stage work = sequential PRs each rebased on latest `main`. Do not chain branches.
+
+### Parallel Work via Worktrees
+When running multiple `spawn_agent` calls in parallel on the same repo, use git worktrees so each agent has its own working tree:
+
+```bash
+git worktree add -b feat/issue-78 worktrees/issue-78 main
+git worktree add -b feat/issue-99 worktrees/issue-99 main
+```
+
+Then pass each worktree path as `working_directory`. Remove worktrees after the PRs merge.
 
 ### Assume Crashes
-Claude Code can hit timeouts, OOM, or die mid-work. Plan for it:
+A `spawn_agent` run can hit timeouts, OOM, or die mid-work. Plan for it:
 1. **Before launching:** Know the expected deliverables (files, tests, config changes).
 2. **After any exit** (clean or crash), run the recovery checklist:
-   - `git status` — what was written?
-   - `pytest` / test suite — does it pass?
-   - Linter/formatter (`ruff`, `eslint`, etc.) — clean?
-   - Type checker (`mypy`, `tsc`, etc.) — clean?
-   - Commit → push → open PR
-3. **Don't retry blindly.** If a run crashed, check what it already wrote. Resume from where it stopped, don't re-run the whole thing.
+   - `git status` in the working directory — what was written?
+   - Test suite — does it pass?
+   - Linter / type checker — clean?
+   - Commit → push → open PR (if the agent didn't finish those steps)
+3. **Don't retry blindly.** If a run crashed, inspect what it already wrote. Resume from where it stopped, don't re-run the whole thing.
+4. **Don't kill sub-runs because they feel slow.** Cancellation is recorded by the runtime and may block retry of the same content.
 
 ### Escalation
 - If the same failure pattern happens twice (e.g. repeated timeouts), escalate to the team. Don't just retry and hope.

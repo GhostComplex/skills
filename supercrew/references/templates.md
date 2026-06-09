@@ -15,9 +15,9 @@ Use this template when planning or tracking multi-milestone development.
 
 | # | Description | Status | Branch | PR | Notes |
 |---|---|---|---|---|---|
-| M1 | {description} | ⬜ Planned | feat/{feature}/dev-m1 | — | — |
-| M2 | {description} | ⬜ Planned | feat/{feature}/dev-m2 | — | — |
-| M3 | {description} | ⬜ Planned | feat/{feature}/dev-m3 | — | — |
+| M1 | {description} | ⬜ Planned | feat/{feature}-s1 | — | — |
+| M2 | {description} | ⬜ Planned | feat/{feature}-s2 | — | — |
+| M3 | {description} | ⬜ Planned | feat/{feature}-s3 | — | — |
 
 **Status key:** ⬜ Planned · 🔄 In Progress · ✅ Complete · 🚫 Blocked
 

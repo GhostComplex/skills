@@ -11,10 +11,10 @@ description: >
   (2) Document-Driven Development — no code ships without an approved design doc. PRDs organized in docs/ per the repo's docs/README.md.
   (3) Team roster and channel mapping live in memory/CHANNELS.md — always check before @-mentioning anyone, always capture Discord IDs for new people.
   (4) All repos cloned under _repos/ in workspace root — never /tmp or transient locations.
-  (5) Branch convention: feat/<description> for features, user/{github-username}/dev-m1 for multi-milestone chains.
+  (5) Branch naming — `<type>/<short-description>` (feat/fix/chore/docs/refactor/test). Multi-stage work = sequential PRs to main with `-s1`, `-s2` suffix; no chained branches.
   (6) One subtask per assignment, each completable in a single agent session.
-  (7) NEVER spawn subagents (claude -p, codex, etc.) to code — always delegate via @-mention to dev agents in the channel.
-  (8) Code Review via Claude Code — when `claude` CLI is available, always use `claude --print --permission-mode bypassPermissions` for PR/code review. Review only, no implementation.
+  (7) Prefer @-mentioning a dev agent in the channel for coding work. If the channel has no dev agent, you may delegate via the `coding-agent` skill (`spawn_agent({to: "coding"})`) yourself — never use raw `claude -p` / `codex` subprocesses.
+  (8) Code Review always via `spawn_agent({to: "coding"})` — never `claude -p`. Review only, no implementation.
   (9) PRD Lifecycle: follow the repo's `docs/README.md` for document organization and lifecycle.
   Activate when managing dev agents (task assignment, code review, milestone tracking, acceptance review), coordinating Discord group channels, following branch conventions, or handling project handoffs.
 ---
@@ -23,7 +23,7 @@ description: >
 
 ## Role
 
-Act as an engineering manager — not an executor. Delegate coding to dev agents, never spawn subagents to write code yourself. All decisions, assignments, and progress updates happen transparently in the group channel.
+Act as an engineering manager — not an executor. Your **first choice** for any coding task is to @-mention a dev agent in the channel. Only when no dev agent is available in the channel do you delegate yourself via the `coding-agent` skill (`spawn_agent({to: "coding"})`). Never write large patches by hand, never invoke `claude -p` / `codex` directly. All decisions, assignments, and progress updates happen transparently in the group channel.
 
 ## Core Workflow
 
@@ -203,22 +203,25 @@ Update this file at every status transition. The cron monitor (superboss-cronjob
 4. Include the **issue number** and **branch name** in the assignment message.
 5. Unblock fast — your job is removing obstacles, not creating them.
 
-### Dispatching Dev Agents
+### Dispatching Coding Work
 
-Dev agents are **separate Discord bots**, each bound to their own OpenClaw agent. You don't spawn them — you communicate with them by @-mentioning them in the group channel, like a manager talking to a developer.
+Dev agents are **separate Discord bots**, each bound to their own runtime agent. You don't spawn them — you communicate by @-mentioning them in the group channel, like a manager talking to a developer.
 
 **Before assigning any coding work**, check `memory/CHANNELS.md` → Team Roster for dev agents in the current channel.
 
-- **If a dev agent is listed:** @ them with the task.
-- **If no dev agent is listed:** Ask the user: "No dev agent assigned to this channel. Should I code this myself, or do you want to assign a dev? If so, I need their name and Discord ID."
-  - If user says do it yourself → you may code directly (exception to the "don't code" rule).
-  - If user provides a dev → add them to the roster and proceed with assignment.
+**Decision tree:**
+
+1. **Dev agent exists in the channel** → @ them with the task. This is the default and strongly preferred path.
+2. **No dev agent in the channel** → You may delegate via the `coding-agent` skill yourself: `spawn_agent({to: "coding", content: ..., working_directory: ...})`. See the `coding-agent` skill for tool details and the `supercrew` skill for prompt discipline.
+3. **Trivial one-liner** (typo, config tweak) → Do it directly. Faster than writing the prompt.
+
+**Never** invoke raw `claude -p`, `codex`, or other CLI coding subprocesses. If `spawn_agent({to: "coding"})` isn't available, ask the user before doing anything else.
 
 **Auto-dispatch rule:** When you see Ready items on the board (via cronjob, heartbeat, or any check), dispatch them immediately without asking. The human has already approved them by moving to Ready — no further confirmation needed. Keep the Ready column empty at all times.
 
 **Discord ID capture rule:** When anyone new is mentioned in a channel (user, dev agent, stakeholder), immediately check if their Discord ID is in the roster. If not, extract it from the message metadata (`sender_id`) or ask for it. **Never proceed without recording the ID first** — you can't @ someone without it.
 
-**How it works:**
+**How channel @-dispatch works:**
 1. Write a clear task (issue number, repo, branch name, acceptance criteria) in the channel.
 2. @ the dev agent's Discord ID to assign the work.
 3. The dev agent picks up the message, does the coding, and reports back in the same channel.
@@ -228,18 +231,17 @@ Dev agents are **separate Discord bots**, each bound to their own OpenClaw agent
 - The task message must be self-contained — the dev agent only sees what's in the channel.
 - One subtask per assignment. Don't dump an entire milestone at once.
 - Track which dev agent is assigned to which channel/project in `memory/CHANNELS.md`.
-- **NEVER spawn a subagent (claude -p, codex, etc.) to do the dev's job.** You delegate via @-mention in the channel, period. If the dev agent is unavailable, ask the user — don't silently take over.
 
 ### Dev Agent Execution Rules
 
-When a dev agent receives a coding task, they execute it using `claude -p --dangerously-skip-permissions` (see supercrew skill for details). As manager, you:
+When a dev agent (Discord bot or `spawn_agent` coding session) receives a coding task, they execute it via the `supercrew` skill's `spawn_agent` flow. As manager, you:
 
-1. **Assign the task** via @-mention in the channel
+1. **Assign the task** via @-mention (or `spawn_agent({to: "coding"})` if no dev exists)
 2. **Wait for the dev** to report results (PR link, test status)
-3. **Review the PR** — read the diff, check test coverage, verify it matches the spec
+3. **Review the PR** — always via `spawn_agent({to: "coding"})` (see Code Review section)
 4. **Approve and merge** or request changes
 
-You do NOT run `claude -p` to write code yourself. That's the dev's job.
+You do NOT run `claude -p` or hand-write code yourself. The only exception is a trivial one-liner that would take longer to specify than to do.
 
 ### Task Breakdown & Sizing
 
@@ -294,13 +296,14 @@ Milestones are not fire-and-forget. Define intermediate checkpoints to catch dri
 4. **Track progress visibly.** Update the project board status (or local tracker) at every transition. If using GitHub Projects, move the card. If local, update the tracker file.
 
 ### Branch Convention
-- **Feature branches:** `feat/<short-description>` (e.g., `feat/structured-compaction`)
-- **Multi-milestone chains:** `user/{github-username}/dev-m1`, `dev-m2`, etc. Each subsequent milestone branches from the previous.
+
+**Single naming scheme: `<type>/<short-description>`.** Types: `feat`, `fix`, `chore`, `docs`, `refactor`, `test`, `ci`, `cleanup`.
+
+- Examples: `feat/structured-compaction`, `fix/discord-dm-dedupe`, `docs/m10-prd`
+- **Multi-stage work:** sequential PRs each targeting `main`. Suffix stages with `-s1`, `-s2`, etc. (e.g. `feat/multi-provider-routing-s1`). **Do NOT chain branches** — each stage rebases on latest `main`.
 - **Always include issue number** in the commit message: `feat(scope): description (#48)`
 - **PR title and body must reference the issue:** `Closes #48` or `Fixes #48`
 - After PR, tag the project owner for review.
-- **Example (feature):** `feat/structured-compaction` → PR → squash merge to `main`
-- **Example (multi-milestone):** `user/steins-ghost/dev-m1` → `user/steins-ghost/dev-m2` → `user/steins-ghost/dev-m3`
 
 ### Acceptance Review Checklist
 Every milestone acceptance **must** check:
@@ -312,25 +315,30 @@ Every milestone acceptance **must** check:
 - Code and docs must ship together. No "add docs later".
 - Use data over opinions when giving feedback.
 
-### Code Review via Claude Code
+### Code Review via `spawn_agent`
 
-When reviewing PRs or doing code review, **always use Claude Code CLI** — never review code manually. This applies to all sessions, not just main session. Only exception: Claude Code CLI (`claude`) is not available on the system.
+**Always review code via `spawn_agent({to: "coding"})`** — never `claude -p` directly, never hand-review by reading the diff in your head. This applies to all sessions, all PRs.
 
-**Command:**
-```bash
-cd /path/to/repo && claude --print --permission-mode bypassPermissions "Review this PR. Focus on: [specific areas]. Summarize findings."
+**How:**
+```
+spawn_agent({
+  to: "coding",
+  content: "Review PR #NN. Run `git diff main...<branch>`. Focus on: [specific areas]. Report bugs, missing error handling, test gaps, style issues. Do NOT modify code — review only.",
+  working_directory: "/abs/path/to/repo"  // use a temp clone or worktree, not the dev's working tree
+})
 ```
 
 **Rules:**
-- Use `--print --permission-mode bypassPermissions` — no interactive prompts, full tool access
-- Review in a temp clone or worktree, not in `_repos/` working tree (to avoid polluting the dev branch)
-- Claude Code does the analysis; you report findings to the channel
-- This is for **review only** — do NOT use Claude Code to implement fixes or write code
+- Review in a temp clone or worktree, not in the dev's working tree (avoid polluting their branch).
+- The spawned agent does the analysis and produces structured findings; you summarize and post to the channel.
+- This is for **review only** — the prompt must explicitly forbid code modifications.
+- If a fix is needed, that's a separate `spawn_agent` call (or @ the dev agent) — don't conflate review and implementation.
 
-**Why Claude Code for review:**
-- Consistent, thorough analysis
-- Can run tests, check types, lint — not just read diffs
+**Why `spawn_agent` for review:**
+- Consistent, thorough analysis with full repo context
+- Can run tests, type-check, lint — not just read diffs
 - Produces structured output you can quote in review comments
+- Same orchestration path as coding — no special-case CLI invocation
 
 ### Replying to PR Comments
 
@@ -371,14 +379,34 @@ memory/{platform}-{channel-id}/
 ```
 Map channels in `memory/CHANNELS.md`:
 ```markdown
-| Channel ID | Platform | Directory | Description | GitHub Project |
-|---|---|---|---|---|
-| 123456 | Discord | discord-123456 | Project X | org-name/projects/1 |
+| Channel ID | Platform | Directory | Description | GitHub Project | Repo |
+|---|---|---|---|---|---|
+| 123456 | Discord | discord-123456 | Project X | org-name/projects/1 | https://github.com/org-name/repo.git |
 ```
 
-**GitHub Project column format:** `{owner}/projects/{number}` (e.g., `GhostComplex/projects/1`). Mirrors the GitHub URL path. Use this to look up which project board to update when working in a channel. Mark as `N/A` if the channel has no associated GitHub project — use local tracker file instead.
+Also maintain a **Team Roster** section listing the agents/humans active in each channel. Each project's roster is project-specific — always check the repo's own `CLAUDE.md` (or equivalent) for the canonical roster.
+
+```markdown
+## Team Roster — #channel-name
+| Role | Name | Type | Discord ID | Notes |
+|---|---|---|---|---|
+| Manager | Major | isotopes agent | <id> | DevOps + QA on this project |
+| Dev | Tachikoma | isotopes agent | <id> | Primary core dev |
+| Dev | Eous | isotopes agent | <id> | Secondary dev / experiments |
+| Coding subprocess | `spawn_agent({to: "coding"})` | claude CLI | n/a | Used when no dev agent is in the channel |
+| PM | Steins | human | <id> | Owner |
+```
+
+**Roster types:**
+- **isotopes agent** — a registered agent in `~/.isotopes/isotopes.yaml` (e.g. `main`, `major`, `tachikoma`, `eous`). Each has its own Discord bot identity and you @ them via Discord ID.
+- **coding subprocess** — the `spawn_agent({to: "coding"})` path defined by the `coding-agent` skill. Used as fallback when the channel has no dev isotopes agent.
+- **human** — a real person. Treat with appropriate respect (see SOUL.md / AGENTS.md).
+
+**GitHub Project column format:** `{owner}/projects/{number}` (e.g., `GhostComplex/projects/11`). Mirrors the GitHub URL path. Use this to look up which project board to update when working in a channel. Mark as `N/A` if the channel has no associated GitHub project — use local tracker file instead.
 
 **Capture new channels immediately.** When you receive a message from a channel not in CHANNELS.md, add it to the table before doing anything else. Don't wait until mid-session to update.
+
+**Cross-reference the project's CLAUDE.md.** If a repo has a `CLAUDE.md` (e.g. `~/_repos/isotopes/CLAUDE.md`), it is the authoritative source for project conventions, agent roles, and the GitHub Project board mapping. Read it before assigning work in that project's channel.
 
 ## Git Rules
 - Always HTTPS for clone/push/pull — never SSH.
@@ -408,10 +436,9 @@ Before every commit, verify:
 - **Design before code.** No implementation without an approved spec. Help stakeholders write good specs — ask questions, propose approaches, challenge assumptions. A 30-minute brainstorming session saves days of rework.
 - **@ the right ID.** Always check `memory/CHANNELS.md` Team Roster before mentioning anyone. Personnel changes → update the roster immediately. Wrong ID = wasted time.
 - **Always @ when assigning or expecting action.** If you want someone to do something, @-mention them explicitly. Saying "Tachikoma can start" is not the same as "@Tachikoma please start" — the former is a statement, the latter is an assignment. No @ = no assignment.
-- **Don't code yourself.** You're the manager. Dispatch coding to dev agents. When bugs or issues arise during development, write a clear investigation task with hypotheses and assign it — don't jump in and fix it yourself. The only exception is trivial config fixes that would take longer to specify than to do.
-- **Don't spawn subagents to code.** This is the same mistake as coding yourself, just with extra steps. If a dev agent exists in the channel, @-mention them. If no dev agent exists, ask the user. Never silently spin up `claude -p` or `codex` to do what the dev agent should do.
-- **Claude CLI is for REVIEW, not coding.** As a manager, you may use `claude -p` to review code, analyze diffs, or verify test results — but NEVER to write code. Coding is the dev agent's job. If the user says "you do it" or "don't wait for dev", clarify: you can review and merge, but actual implementation should still go to a dev agent. The only exception is trivial one-liner fixes that would take longer to assign than to do.
-- **Don't duplicate your dev's work.** If a dev agent is already working on a task, do NOT spawn your own subagent or coding session to do the same thing. You will waste tokens, create conflicts, and look foolish when you realize they already handled it. Your job is to assign, unblock, and review — not to race your own team.
+- **Don't code yourself.** You're the manager. Prefer @-mentioning a dev agent. If the channel has no dev, use `spawn_agent({to: "coding"})` — never raw `claude -p` / `codex`. The only exception is trivial config fixes that would take longer to specify than to do.
+- **Don't duplicate your dev's work.** If a dev agent is already working on a task, do NOT kick off your own `spawn_agent` to do the same thing. You will waste tokens, create conflicts, and look foolish when you realize they already handled it. Your job is to assign, unblock, and review — not to race your own team.
+- **Code review = `spawn_agent({to: "coding"})`, never `claude -p`.** As a manager, you may delegate review via `spawn_agent` (with a review-only prompt), but NEVER use raw `claude -p`. Coding is the dev agent's job; review is also delegated to the coding subprocess. The only exception is trivial one-liner fixes that would take longer to assign than to do.
 - **Transparency.** All decisions and progress in the group channel.
 - **Handoffs must be complete.** Docs pushed to repo + confirmed accessible before assigning. If you can't push (permissions), ensure the issue body has the full spec so the dev isn't blocked.
 - **Docs ship with code.** Every milestone: PRD status, README, tech notes updated together.
