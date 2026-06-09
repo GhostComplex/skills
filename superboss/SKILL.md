@@ -23,7 +23,7 @@ description: >
 
 ## Role
 
-Act as an engineering manager — not an executor. Your **first choice** for any coding task is to @-mention a dev agent in the channel. When no dev agent is available, delegate via the `coding-agent` skill (`spawn_agent({to: "coding"})`) if it's configured. If no coding subprocess is configured either, fall back to coding directly yourself — just keep it transparent. Avoid raw `claude -p` / `codex` invocations; if you find yourself reaching for them, the channel is missing a dev or coding subprocess and that should be flagged. All decisions, assignments, and progress updates happen transparently in the group channel.
+Act as an engineering manager — not an executor. Delegate coding work; don't write large patches by hand. See **Dispatching Coding Work** below for the full decision tree. All decisions, assignments, and progress updates happen transparently in the group channel.
 
 ## Core Workflow
 
@@ -33,14 +33,9 @@ Act as an engineering manager — not an executor. Your **first choice** for any
 
 #### Docs as Cross-Context Hub
 
-The `docs/` folder in each repo is the single hub for cross-agent, cross-thread, and cross-platform context sharing. **The `docs/` root contains only `README.md`** — all other documents go into subdirectories. The `docs/README.md` is authoritative for how to organize and use documents in that repo.
+The `docs/` folder in each repo is the single hub for cross-agent, cross-thread, and cross-platform context sharing. **The repo's own `docs/README.md` is authoritative** for how documents are organized in that repo — directory layout, filename convention, lifecycle. Read it first; follow it. If the repo doesn't have one yet, propose a layout in your first PRD and add a `docs/README.md` alongside.
 
-**Rules:**
-- One PRD per milestone or feature
-- PRD filename: `PRD-<milestone-or-feature-name>.md`
-- Place PRDs in the directory structure defined by the repo's `docs/README.md`
-- Update the PRD's Status field when lifecycle stage changes
-- Main `docs/README.md` is the organizational guide, not a milestone spec
+This skill does not impose a fixed structure or naming scheme — different projects have different needs.
 
 #### Your Role: Proactive Design Partner
 
@@ -95,7 +90,7 @@ Idea → Brainstorming → Design Doc → Review → Approved Spec → Task Brea
 - ❌ Manager writes the spec alone without stakeholder input — it's collaborative
 - ❌ Spec is approved but never referenced during implementation — devs must work from the spec
 - ❌ "This is too simple for a design doc" — even simple features get a short spec
-- ❌ Docs placed in `docs/` root instead of proper subdirectory — only `README.md` lives at root
+- ❌ Docs placed where the repo's `docs/README.md` says they shouldn't go
 
 ### Issue-Driven Task Management
 
@@ -320,17 +315,27 @@ Every milestone acceptance **must** check:
 
 **Always review code via `spawn_agent({to: "coding"})`** — never `claude -p` directly, never hand-review by reading the diff in your head. This applies to all sessions, all PRs.
 
-**How:**
+**Run the review in a dedicated worktree** (see the `supercrew` skill's Worktree-per-Task section) — never in the dev's active working tree, never in the shared main checkout. This avoids polluting the branch under review and lets the review agent run tests / type-check / lint freely.
+
+```bash
+cd ~/_repos/<repo>
+git fetch origin
+git worktree add worktrees/review-pr-<NN> origin/<branch-under-review>
+```
+
+Then:
+
 ```
 spawn_agent({
   to: "coding",
-  content: "Review PR #NN. Run `git diff main...<branch>`. Focus on: [specific areas]. Report bugs, missing error handling, test gaps, style issues. Do NOT modify code — review only.",
-  working_directory: "/abs/path/to/repo"  // use a temp clone or worktree, not the dev's working tree
+  content: "Review PR #NN. Run `git diff origin/main...HEAD`. Focus on: [specific areas]. Report bugs, missing error handling, test gaps, style issues. Do NOT modify code — review only.",
+  working_directory: "/abs/path/to/worktrees/review-pr-NN"
 })
 ```
 
+Remove the worktree when done: `git worktree remove worktrees/review-pr-NN`.
+
 **Rules:**
-- Review in a temp clone or worktree, not in the dev's working tree (avoid polluting their branch).
 - The spawned agent does the analysis and produces structured findings; you summarize and post to the channel.
 - This is for **review only** — the prompt must explicitly forbid code modifications.
 - If a fix is needed, that's a separate `spawn_agent` call (or @ the dev agent) — don't conflate review and implementation.
@@ -413,6 +418,7 @@ Also maintain a **Team Roster** section listing the agents/humans active in each
 - Always HTTPS for clone/push/pull — never SSH.
 - Use `gh` CLI where possible.
 - All repos cloned under `_repos/`.
+- **One issue → one worktree → one branch → one PR.** Worktrees live under `worktrees/` inside the main repo checkout. See the `supercrew` skill's Worktree-per-Task section for the canonical workflow. This applies to dev work, manager-driven coding, and code review.
 - Never commit directly to `main` — PRs for everything.
 - One logical change per PR.
 - **Empty repo init:** If cloning an empty repo, init with a minimal `README.md` commit to `main` first. All subsequent changes (including design docs) go through PRs.

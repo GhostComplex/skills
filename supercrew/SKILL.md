@@ -62,28 +62,7 @@ Act as an experienced software developer. Write code, fix bugs, implement featur
 
 **No code ships without a written design.** Before any feature or milestone enters development, its design must be documented and reviewed. Even "simple" features get a short spec.
 
-#### PRD Directory Structure
-
-**Always follow the repo's own `docs/README.md`** — it is authoritative. The structure below is the default when no `docs/README.md` exists yet.
-
-Default layout:
-
-```
-docs/
-├── README.md          # Authoritative organizational guide
-├── prd/               # All product / design specs (active and historical)
-│   └── PRD-<issue>-<topic>.md
-└── research/          # Investigations, RCAs, comparisons
-    └── RCA-<topic>.md
-```
-
-**Rules:**
-- `docs/` root contains only `README.md`. All documents go in subdirectories.
-- One PRD per milestone or feature; update its `Status` field as it progresses.
-- PRD filename: `PRD-<issue>-<topic>.md` or `<topic>-m1.md`.
-- Drafts and in-flight specs go directly in `docs/prd/` — no separate `wip/` directory.
-- Truly stale, history-only documents are removed from the repo, not archived in-tree. If the project has a sibling docs archive repo, push them there.
-- Keep depth shallow: `docs/<category>/<file>.md`. Don't nest `docs/x/y/z/...`.
+Where and how the spec lives in the repo — directory layout, filename convention, lifecycle — is **defined by the repo's own `docs/README.md`**. Read it first; follow it. If the repo doesn't have one yet, propose a layout in your first PRD.
 
 #### The DDD Flow
 
@@ -91,7 +70,7 @@ docs/
 Idea → Design Doc → Review Gate → Task Breakdown → Implementation
 ```
 
-1. **Design Doc** — Before coding, write a spec covering: goal, approach, components, data flow, error handling, testing strategy. Scale each section to complexity — a few sentences if straightforward, detailed if nuanced. Save to `docs/prd/PRD-<feature-name>.md` (per the repo's `docs/README.md`) and commit.
+1. **Design Doc** — Before coding, write a spec covering: goal, approach, components, data flow, error handling, testing strategy. Scale each section to complexity — a few sentences if straightforward, detailed if nuanced. Save it where the repo's `docs/README.md` says it goes, and commit.
 2. **Review Gate** — The spec must be reviewed and approved before implementation begins. If changes are requested, revise and re-review. Only proceed once explicitly approved.
 3. **Task Breakdown** — Once approved, break into subtasks (see Keep Runs Focused). Each subtask should reference the PRD.
 4. **Implementation** — Work from the approved spec. Any deviation requires discussion, not silent changes.
@@ -118,7 +97,7 @@ When exploring a feature or requirement:
 - ❌ Design lives only in chat messages — it must be a committed document
 - ❌ Spec is approved but never referenced during implementation
 - ❌ "This is too simple for a design doc" — even simple features get a short spec
-- ❌ PRDs placed at `docs/` root instead of the proper subdirectory
+- ❌ PRDs placed where the repo's `docs/README.md` says they shouldn't go
 
 ## Branch Convention
 
@@ -340,15 +319,29 @@ If in doubt, delegate.
 - **Don't wait to batch.** Open the PR as soon as the subtask is done. Smaller PRs get faster, better reviews.
 - **Each PR targets `main`.** Multi-stage work = sequential PRs each rebased on latest `main`. Do not chain branches.
 
-### Parallel Work via Worktrees
-When running multiple `spawn_agent` calls in parallel on the same repo, use git worktrees so each agent has its own working tree:
+## Worktree-per-Task
+
+**Standard workflow for isotopes-style projects:** every active task runs in its own git worktree. This matches the `isotopes/CLAUDE.md` convention ("Pick a Ready issue → move to In progress → open worktree") and is the default path whether the work runs serially or in parallel.
 
 ```bash
-git worktree add -b feat/issue-78 worktrees/issue-78 main
-git worktree add -b feat/issue-99 worktrees/issue-99 main
+cd ~/_repos/<repo>
+git fetch origin
+git worktree add -b <type>/<short-description> worktrees/<short-description> origin/main
 ```
 
-Then pass each worktree path as `working_directory`. Remove worktrees after the PRs merge.
+Then pass the worktree path as `working_directory` for any `spawn_agent` call (or `cd` into it for direct work). Remove the worktree once the PR merges:
+
+```bash
+git worktree remove worktrees/<short-description>
+git branch -d <type>/<short-description>
+```
+
+**Rules:**
+- One issue → one worktree → one branch → one PR.
+- Worktrees live under `worktrees/` inside the main repo checkout. Don't scatter them.
+- Always base on **latest `origin/main`**, not the current HEAD of your main checkout (which may be stale).
+- Worktrees enable safe parallel `spawn_agent` calls on the same repo — each agent gets its own tree, no cross-contamination.
+- Code review (see superboss) also runs in a worktree (or temp clone) — never in the dev's active working tree.
 
 ### Assume Crashes
 A `spawn_agent` run can hit timeouts, OOM, or die mid-work. Plan for it:
